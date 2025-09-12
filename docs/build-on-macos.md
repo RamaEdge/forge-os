@@ -222,6 +222,8 @@ export QEMU_CPUS=2
 
 - Check the [Architecture Documentation](architecture.md)
 - Review the [Implementation Plan](implementation_plan.md)
+- See [Toolchains Documentation](toolchains.md) for cross-compilation setup
+- See [Kernel Documentation](kernel.md) for kernel build details
 - Search existing issues in the project repository
 - Create a new issue with detailed error information
 
@@ -255,4 +257,4 @@ After successfully building ForgeOS:
 3. **Contribute**: Submit improvements and bug fixes
 4. **Deploy**: Use ForgeOS in your edge computing projects
 
-For more information, see the [Architecture Documentation](architecture.md) and [Implementation Plan](implementation_plan.md).
+For more information, see the [Architecture Documentation](architecture.md), [Implementation Plan](implementation_plan.md), and other documentation in the [`docs/`](.) folder.

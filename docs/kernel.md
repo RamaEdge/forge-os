@@ -255,4 +255,4 @@ The kernel build uses the ForgeOS toolchain system:
 - [Linux Kernel Documentation](https://www.kernel.org/doc/)
 - [ARM64 Architecture](https://developer.arm.com/architectures/cpu-architecture/a-profile)
 - [Kernel Security](https://www.kernel.org/doc/html/latest/security/)
-- [ForgeOS Architecture](docs/architecture.md)
+- [ForgeOS Architecture](architecture.md)

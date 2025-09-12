@@ -53,7 +53,15 @@ forgeos/
 - **Modular**: Profile-based system for different use cases
 
 ## Key Documentation
+All documentation is centralized in the `docs/` folder:
+
 - [architecture.md](mdc:docs/architecture.md) - Complete system architecture
 - [implementation_plan.md](mdc:docs/implementation_plan.md) - Detailed development roadmap
+- [build-on-macos.md](mdc:docs/build-on-macos.md) - Build instructions for macOS
+- [profiles.md](mdc:docs/profiles.md) - Profile system documentation
+- [security.md](mdc:docs/security.md) - Security guidelines and hardening
+- [troubleshooting.md](mdc:docs/troubleshooting.md) - Common issues and solutions
+
+**Documentation Rule**: All documentation must be placed in `docs/` folder. Avoid creating README files in subdirectories.
 
 When working on ForgeOS, always consider security, reproducibility, and edge deployment constraints.

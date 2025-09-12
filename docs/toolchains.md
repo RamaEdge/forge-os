@@ -236,4 +236,4 @@ Toolchains are cached in CI/CD pipelines:
 - [musl-cross-make](https://github.com/richfelker/musl-cross-make)
 - [crosstool-ng](https://crosstool-ng.github.io/)
 - [GCC Cross-Compiler](https://gcc.gnu.org/onlinedocs/gcc/Cross-Compilation.html)
-- [ForgeOS Architecture](docs/architecture.md)
+- [ForgeOS Architecture](architecture.md)

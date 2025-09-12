@@ -113,6 +113,28 @@ type(scope): description
 
 ## Documentation Standards
 
+### Centralized Documentation
+- **All documentation**: Must be placed in `docs/` folder
+- **No scattered docs**: Avoid README files in subdirectories
+- **Single source**: One authoritative location for all docs
+- **Cross-references**: Use relative links within docs/
+
+### Documentation Structure
+```
+docs/
+├── architecture.md          # System architecture overview
+├── implementation_plan.md   # Development roadmap
+├── build-on-macos.md       # Build instructions
+├── profiles.md             # Profile system documentation
+├── security.md             # Security guidelines
+├── observability.md        # Logging and monitoring
+├── device-management.md    # Device management guide
+├── troubleshooting.md      # Common issues and solutions
+├── api/                    # API documentation
+├── guides/                 # User guides and tutorials
+└── reference/              # Technical reference
+```
+
 ### Architecture Documentation
 - **Keep current**: Update docs with code changes
 - **Clear diagrams**: Use Mermaid for system diagrams
@@ -162,9 +184,10 @@ type(scope): description
 ### Pull Request Requirements
 - **Description**: Clear description of changes
 - **Testing**: Evidence of testing
-- **Documentation**: Updated documentation
+- **Documentation**: Updated documentation in `docs/` folder
 - **Security**: Security considerations addressed
 - **Breaking changes**: Document breaking changes
+- **No scattered docs**: All documentation must be in `docs/` folder
 
 ### Code Review Guidelines
 - **Security focus**: Security implications first
