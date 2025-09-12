@@ -1,0 +1,33 @@
+#!/bin/sh
+# ForgeOS /etc/init.d/rcS
+# System startup script for edge computing
+
+echo "Starting ForgeOS system initialization..."
+
+# Mount virtual file systems
+echo "Mounting virtual file systems..."
+mount -a
+
+# Create device nodes
+echo "Creating device nodes..."
+mdev -s
+
+# Set up networking
+echo "Setting up networking..."
+ifconfig lo 127.0.0.1 up
+route add -net 127.0.0.0 netmask 255.0.0.0 lo
+
+# Start system services
+echo "Starting system services..."
+syslogd
+klogd
+
+# Set hostname
+echo "Setting hostname..."
+hostname forgeos
+
+# Initialize random number generator
+echo "Initializing random number generator..."
+dd if=/dev/urandom of=/dev/null bs=1024 count=1 2>/dev/null
+
+echo "ForgeOS system initialization complete."

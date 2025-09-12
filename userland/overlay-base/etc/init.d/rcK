@@ -1,0 +1,20 @@
+#!/bin/sh
+# ForgeOS /etc/init.d/rcK
+# System shutdown script for edge computing
+
+echo "Shutting down ForgeOS system..."
+
+# Stop system services
+echo "Stopping system services..."
+killall klogd 2>/dev/null
+killall syslogd 2>/dev/null
+
+# Unmount file systems
+echo "Unmounting file systems..."
+umount -a -r
+
+# Sync file systems
+echo "Syncing file systems..."
+sync
+
+echo "ForgeOS system shutdown complete."
