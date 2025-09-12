@@ -1,0 +1,27 @@
+From: ForgeOS Security Team <security@forgeos.org>
+Subject: [PATCH] Additional security hardening for edge computing
+
+This patch adds additional security hardening options specifically
+optimized for edge computing environments.
+
+Signed-off-by: ForgeOS Security Team <security@forgeos.org>
+---
+ arch/arm64/Kconfig | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index 1234567..abcdefg 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -100,6 +100,11 @@ config ARM64
+ 	select ARCH_SUPPORTS_ATOMIC_RMW
+ 	select ARCH_SUPPORTS_INT128 if CC_HAS_INT128
+ 	select ARCH_SUPPORTS_NUMA_BALANCING
++	# ForgeOS security hardening
++	select ARCH_HAS_STRICT_KERNEL_RWX
++	select ARCH_HAS_STRICT_MODULE_RWX
++	select ARCH_MMAP_RND_BITS if MMU
++	select ARCH_MMAP_RND_COMPAT_BITS if MMU
+ 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION if COMPAT
+ 	select ARCH_WANT_DEFAULT_TOPDOWN_MMAP_LAYOUT
+ 	select ARCH_WANT_FRAME_POINTERS

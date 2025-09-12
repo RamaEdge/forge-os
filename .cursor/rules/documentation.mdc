@@ -1,0 +1,214 @@
+---
+globs: docs/*,*.md
+description: Documentation standards and centralized documentation guidelines for ForgeOS
+---
+
+# ForgeOS Documentation Rules
+
+## Centralized Documentation Policy
+
+**CRITICAL**: All documentation must be placed in the `docs/` folder. This is a non-negotiable requirement.
+
+### Documentation Location Rules
+- **All documentation**: Must be in `docs/` folder
+- **No scattered docs**: Avoid README files in subdirectories
+- **Single source**: One authoritative location for all docs
+- **Cross-references**: Use relative links within docs/
+
+### Prohibited Practices
+- ❌ Creating README.md files in subdirectories
+- ❌ Scattering documentation across the codebase
+- ❌ Duplicating documentation in multiple locations
+- ❌ Using absolute paths in documentation links
+
+### Required Practices
+- ✅ Place all documentation in `docs/` folder
+- ✅ Use descriptive filenames with hyphens
+- ✅ Use relative links within docs folder
+- ✅ Update cross-references when moving content
+
+## Documentation Structure
+
+### Current Documentation
+```
+docs/
+├── README.md                 # Documentation index and navigation
+├── architecture.md           # System architecture overview
+├── implementation_plan.md    # Development roadmap
+├── build-on-macos.md        # Build instructions
+├── toolchains.md            # Cross-compilation toolchains
+├── kernel.md                # Linux kernel system
+└── kernel-patches.md        # Security patches
+```
+
+### Planned Documentation
+```
+docs/
+├── profiles.md              # Profile system documentation
+├── security.md              # Security guidelines
+├── observability.md         # Logging and monitoring
+├── device-management.md     # Device management guide
+├── troubleshooting.md       # Common issues and solutions
+├── api/                     # API documentation
+├── guides/                  # User guides and tutorials
+└── reference/               # Technical reference
+```
+
+## File Naming Conventions
+
+### Standard Format
+- Use lowercase with hyphens: `build-on-macos.md`
+- Be descriptive: `kernel-patches.md` not `patches.md`
+- Group related content: `device-management.md` not `device.md`
+
+### Examples
+- ✅ `build-on-macos.md`
+- ✅ `kernel-patches.md`
+- ✅ `device-management.md`
+- ❌ `BuildOnMacOS.md`
+- ❌ `patches.md`
+- ❌ `device.md`
+
+## Cross-Reference Standards
+
+### Internal Links
+Use relative paths within the docs folder:
+
+```markdown
+# Correct
+- [Architecture](architecture.md)
+- [Build Instructions](build-on-macos.md)
+- [Kernel Documentation](kernel.md)
+
+# Incorrect
+- [Architecture](../docs/architecture.md)
+- [Build Instructions](docs/build-on-macos.md)
+```
+
+### External Links
+Use full URLs for external references:
+
+```markdown
+# Correct
+- [Linux Kernel](https://www.kernel.org/)
+- [QEMU Documentation](https://www.qemu.org/)
+
+# Incorrect
+- [Linux Kernel](linux-kernel.md)  # If it's external
+```
+
+## Content Standards
+
+### Structure
+- Use clear headings with consistent hierarchy
+- Include table of contents for long documents
+- Provide practical examples and code snippets
+- Include troubleshooting sections where relevant
+
+### Writing Style
+- Write in clear, concise language
+- Use active voice where possible
+- Include copy-paste-friendly commands
+- Provide context and explanations
+
+### Code Examples
+- Use proper syntax highlighting
+- Include expected output where helpful
+- Test all examples before committing
+- Provide error handling examples
+
+## Documentation Maintenance
+
+### When to Update Documentation
+- **Code changes**: Update docs when code changes
+- **New features**: Document new functionality
+- **Bug fixes**: Update troubleshooting sections
+- **Process changes**: Update workflow documentation
+
+### Review Process
+- All documentation changes should be reviewed
+- Ensure examples work and are tested
+- Verify cross-references are correct
+- Check for typos and clarity
+
+### Version Control
+- Commit documentation changes with code changes
+- Use descriptive commit messages
+- Include documentation updates in pull requests
+- Tag releases with documentation updates
+
+## Integration with Development
+
+### Pull Request Requirements
+- **Documentation updates**: Required for code changes
+- **Cross-references**: Must be updated when moving content
+- **Examples**: Must be tested and working
+- **Links**: Must be verified and functional
+
+### Code Review Checklist
+- [ ] Documentation is updated for code changes
+- [ ] All examples are tested and working
+- [ ] Cross-references are correct and functional
+- [ ] New documentation follows naming conventions
+- [ ] Content is clear and well-structured
+
+## Tools and Automation
+
+### Documentation Tools
+- **Markdown**: Use standard Markdown syntax
+- **Mermaid**: For system diagrams and flowcharts
+- **Code blocks**: With proper syntax highlighting
+- **Tables**: For structured information
+
+### Quality Checks
+- **Link checking**: Verify all internal and external links
+- **Spell checking**: Use spell checkers for content
+- **Format validation**: Ensure proper Markdown syntax
+- **Example testing**: Test all code examples
+
+## Enforcement
+
+### Cursor Rules Integration
+This rule is enforced through Cursor's glob patterns:
+- `docs/*` - All documentation files
+- `*.md` - All Markdown files in the project
+
+### Development Workflow
+- Documentation changes are required for code changes
+- All new features must include documentation
+- Breaking changes must include migration guides
+- Security changes must include security documentation
+
+## Examples
+
+### Good Documentation Structure
+```markdown
+# Feature Name
+
+## Overview
+Brief description of the feature.
+
+## Configuration
+How to configure the feature.
+
+## Usage
+Examples of how to use the feature.
+
+## Troubleshooting
+Common issues and solutions.
+
+## References
+- [Related Documentation](related-doc.md)
+- [External Resource](https://example.com)
+```
+
+### Good Cross-References
+```markdown
+# In docs/kernel.md
+For more information about the build system, see [Build Instructions](build-on-macos.md).
+
+# In docs/build-on-macos.md
+The kernel build process is documented in [Kernel Documentation](kernel.md).
+```
+
+Remember: Documentation is a first-class citizen in ForgeOS. All code changes must include corresponding documentation updates.

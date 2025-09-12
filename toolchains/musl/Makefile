@@ -40,7 +40,7 @@ $(MUSL_CROSS_MAKE_TAR):
 configure: download
 	@echo "Extracting and configuring musl-cross-make..."
 	@cd $(BUILD_DIR) && tar -xzf $(notdir $(MUSL_CROSS_MAKE_TAR))
-	@cd $(BUILD_DIR) && mv musl-cross-make-$(MUSL_CROSS_MAKE_VERSION) musl-cross-make
+	@cd $(BUILD_DIR) && rm -rf musl-cross-make && mv musl-cross-make-$(MUSL_CROSS_MAKE_VERSION) musl-cross-make
 	@cd $(MUSL_CROSS_MAKE_DIR) && \
 		echo "TARGET = $(TARGET)" > config.mak && \
 		echo "OUTPUT = $(abspath $(TOOLCHAIN_OUTPUT))" >> config.mak && \
