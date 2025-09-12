@@ -13,27 +13,38 @@ ARCH="${1:-aarch64}"
 BUILD_DIR="${2:-build/busybox}"
 ARTIFACTS_DIR="${3:-artifacts}"
 
-# Cross-compilation settings
-CROSS_COMPILE="${ARCH}-linux-musl-"
-export CROSS_COMPILE
-export ARCH
+# Load toolchain environment
+if [[ -f "$PROJECT_ROOT/toolchains/env.musl" ]]; then
+    source "$PROJECT_ROOT/toolchains/env.musl"
+else
+    echo "Error: Toolchain environment not found. Please run 'make toolchain' first."
+    exit 1
+fi
 
 echo "Building BusyBox for $ARCH..."
 echo "Build directory: $BUILD_DIR"
 echo "Artifacts directory: $ARTIFACTS_DIR"
+echo "Cross-compile: $CROSS_COMPILE"
 
 # Create directories
 mkdir -p "$BUILD_DIR"
 mkdir -p "$ARTIFACTS_DIR/busybox"
 
-# TODO: Add BusyBox submodule and build logic
-# This is a placeholder script for THE-48 (Userland Base)
+# Build BusyBox using the userland Makefile
+echo "Building BusyBox with static configuration..."
+cd "$PROJECT_ROOT/userland/busybox"
+make ARCH="$ARCH" BUILD_DIR="$BUILD_DIR" OUTPUT_DIR="$ARTIFACTS_DIR"
 
-echo "BusyBox build completed (placeholder)"
-echo "Artifacts will be placed in: $ARTIFACTS_DIR/busybox/"
+echo "BusyBox build completed successfully"
+echo "Artifacts placed in: $ARTIFACTS_DIR/busybox/"
 
-# Placeholder: Create dummy BusyBox binary for testing
-touch "$ARTIFACTS_DIR/busybox/busybox"
-echo "Created placeholder BusyBox binary"
+# Verify BusyBox binary
+if [[ -f "$ARTIFACTS_DIR/busybox/busybox" ]]; then
+    echo "BusyBox binary created successfully"
+    file "$ARTIFACTS_DIR/busybox/busybox"
+else
+    echo "Error: BusyBox binary not found"
+    exit 1
+fi
 
 exit 0

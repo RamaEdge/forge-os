@@ -20,17 +20,44 @@ echo "Artifacts directory: $ARTIFACTS_DIR"
 
 # Create directories
 mkdir -p "$BUILD_DIR"
-mkdir -p "$ARTIFACTS_DIR"
-
-# TODO: Implement root filesystem creation logic
-# This is a placeholder script for THE-48 (Userland Base) and THE-50 (Package System)
-
-echo "Root filesystem creation completed (placeholder)"
-echo "Artifacts will be placed in: $ARTIFACTS_DIR/"
-
-# Placeholder: Create dummy rootfs for testing
 mkdir -p "$ARTIFACTS_DIR/rootfs"
-touch "$ARTIFACTS_DIR/rootfs/placeholder"
-echo "Created placeholder root filesystem"
+
+# Create rootfs skeleton
+echo "Creating root filesystem skeleton..."
+"$PROJECT_ROOT/userland/rootfs-skeleton.sh" "$ARTIFACTS_DIR/rootfs"
+
+# Copy BusyBox binary
+if [[ -f "$ARTIFACTS_DIR/busybox/busybox" ]]; then
+    echo "Installing BusyBox..."
+    cp "$ARTIFACTS_DIR/busybox/busybox" "$ARTIFACTS_DIR/rootfs/bin/"
+    chmod +x "$ARTIFACTS_DIR/rootfs/bin/busybox"
+    
+    # Create BusyBox applet symlinks
+    echo "Creating BusyBox applet symlinks..."
+    cd "$ARTIFACTS_DIR/rootfs"
+    "$ARTIFACTS_DIR/rootfs/bin/busybox" --install -s
+    cd "$PROJECT_ROOT"
+else
+    echo "Warning: BusyBox binary not found, creating placeholder symlinks"
+    ln -sf /bin/busybox "$ARTIFACTS_DIR/rootfs/bin/sh" 2>/dev/null || true
+    ln -sf /bin/busybox "$ARTIFACTS_DIR/rootfs/bin/init" 2>/dev/null || true
+fi
+
+# Copy overlay-base configuration
+echo "Installing base configuration..."
+cp -r "$PROJECT_ROOT/userland/overlay-base"/* "$ARTIFACTS_DIR/rootfs/" 2>/dev/null || true
+
+# Set proper permissions
+echo "Setting permissions..."
+chmod 755 "$ARTIFACTS_DIR/rootfs/etc/init.d/rcS" 2>/dev/null || true
+chmod 755 "$ARTIFACTS_DIR/rootfs/etc/init.d/rcK" 2>/dev/null || true
+
+echo "Root filesystem creation completed successfully"
+echo "Root filesystem created at: $ARTIFACTS_DIR/rootfs/"
+
+# Show rootfs structure
+echo "Root filesystem structure:"
+find "$ARTIFACTS_DIR/rootfs" -type f | head -20
+echo "... (showing first 20 files)"
 
 exit 0

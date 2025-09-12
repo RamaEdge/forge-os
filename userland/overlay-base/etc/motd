@@ -1,0 +1,12 @@
+Welcome to ForgeOS - Lightweight Linux forged for the edge
+
+ForgeOS v0.1.0 - Edge Computing Distribution
+Built with security-first principles and minimal footprint.
+
+For documentation, see: /usr/share/doc/forgeos/
+For support, visit: https://github.com/forgeos/forgeos
+
+This system is configured for edge computing workloads.
+All security features are enabled by default.
+
+Last login: $(date)

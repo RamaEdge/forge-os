@@ -1,0 +1,11 @@
+# ForgeOS /etc/inittab
+# BusyBox init configuration for edge computing
+
+# System startup
+::sysinit:/etc/init.d/rcS
+
+# Console shell
+ttyAMA0::respawn:/bin/sh
+
+# System shutdown
+::shutdown:/etc/init.d/rcK
