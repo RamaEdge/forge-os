@@ -1,0 +1,177 @@
+---
+globs: profiles/*,userland/overlay-base/*
+description: Profile system and modularity guidelines for ForgeOS
+---
+
+# ForgeOS Profiles System
+
+## Profile Philosophy
+ForgeOS uses a **modular profile system** to create different system configurations for various use cases. Each profile is a complete system configuration that can be built independently.
+
+## Profile Structure
+Each profile in [profiles/](mdc:profiles/) follows this structure:
+```
+profiles/PROFILE_NAME/
+├─ overlay/           # Filesystem overlay (configs, init scripts)
+│  ├─ etc/           # Configuration files
+│  ├─ usr/           # User binaries and libraries
+│  └─ var/           # Variable data templates
+├─ packages.txt      # Package list for this profile
+└─ README.md         # Profile documentation
+```
+
+## Core Profiles
+
+### core-min
+**Purpose**: Minimal system for embedded/headless devices
+- **Init**: BusyBox init with mdev
+- **Networking**: udhcpc for DHCP
+- **Access**: Serial console only (no SSH by default)
+- **Services**: Minimal logging, basic time sync
+- **Use case**: IoT sensors, simple embedded devices
+
+### core-net
+**Purpose**: Network-enabled minimal system
+- **Init**: BusyBox init with enhanced networking
+- **Networking**: nftables firewall, chrony time sync
+- **Access**: SSH (key-only), serial console
+- **Services**: Log shipping, basic monitoring
+- **Use case**: Network gateways, remote devices
+
+### service-sd
+**Purpose**: Full systemd-based system
+- **Init**: systemd with full service management
+- **Networking**: systemd-networkd, systemd-resolved
+- **Access**: SSH, serial console
+- **Services**: journald, systemd timers, cgroups v2
+- **Use case**: Servers, complex service deployments
+
+### iot-field
+**Purpose**: Industrial IoT gateway
+- **Init**: systemd or BusyBox init
+- **Networking**: MQTT client, OPC UA gateway
+- **Access**: SSH, web interface, serial console
+- **Services**: Protocol bridges, TLS management, remote updates
+- **Use case**: Industrial automation, field gateways
+
+### ai-infer
+**Purpose**: AI inference workloads
+- **Init**: systemd with container support
+- **Networking**: Container networking, model serving
+- **Access**: SSH, API endpoints, serial console
+- **Services**: Container runtime, GPU/NPU drivers, model management
+- **Use case**: Edge AI, inference servers
+
+## Profile Development Guidelines
+
+### Overlay Files
+- **Configuration files**: Place in `overlay/etc/`
+- **Init scripts**: Place in `overlay/etc/init.d/` or systemd units
+- **User binaries**: Place in `overlay/usr/local/bin/`
+- **Service data**: Place in `overlay/var/`
+
+### Package Management
+- **Base packages**: Inherit from base system (BusyBox, kernel)
+- **Profile packages**: List in `packages.txt`
+- **Dependencies**: Explicitly list all required packages
+- **Version pinning**: Pin package versions for reproducibility
+
+### Configuration Templates
+- **Environment variables**: Use `@PROFILE@` placeholders
+- **Service configs**: Template with profile-specific settings
+- **Network configs**: Profile-appropriate network settings
+- **Security policies**: Profile-specific AppArmor rules
+
+## Profile Build Process
+
+### Build Integration
+1. **Base system**: Build kernel, BusyBox, toolchain
+2. **Profile selection**: Choose profile via `PROFILE=core-min`
+3. **Overlay application**: Apply profile overlay to base
+4. **Package installation**: Install profile-specific packages
+5. **Configuration**: Apply profile-specific configurations
+6. **Finalization**: Create final rootfs and images
+
+### Makefile Integration
+```makefile
+# Profile-specific builds
+build-$(PROFILE): toolchain kernel busybox
+	$(MAKE) -C profiles/$(PROFILE) build
+
+# Default profile
+PROFILE ?= core-min
+```
+
+## Profile Customization
+
+### Adding New Profiles
+1. **Create directory**: `profiles/NEW_PROFILE/`
+2. **Define overlay**: Create `overlay/` with configs
+3. **List packages**: Create `packages.txt`
+4. **Document**: Add `README.md` with usage instructions
+5. **Test**: Build and test profile in QEMU
+6. **Integrate**: Add to CI/CD matrix
+
+### Profile Inheritance
+- **Base overlay**: All profiles inherit from [userland/overlay-base/](mdc:userland/overlay-base/)
+- **Profile overlay**: Profile-specific files override base
+- **Package inheritance**: Profiles can extend base package lists
+- **Configuration inheritance**: Profile configs extend base configs
+
+## Profile Testing
+
+### QEMU Testing
+- **Boot testing**: Verify profile boots in QEMU
+- **Service testing**: Verify all services start correctly
+- **Network testing**: Test network configuration
+- **Security testing**: Verify security policies work
+
+### Hardware Testing
+- **Target hardware**: Test on actual target devices
+- **Performance testing**: Verify performance meets requirements
+- **Reliability testing**: Long-running stability tests
+- **Update testing**: Test profile update procedures
+
+## Profile Documentation
+
+### Required Documentation
+- **README.md**: Profile purpose, use cases, configuration
+- **Configuration guide**: How to configure profile
+- **Troubleshooting**: Common issues and solutions
+- **Security notes**: Security considerations and hardening
+
+### Documentation Standards
+- **Clear purpose**: Explain what the profile is for
+- **Use cases**: Provide concrete use case examples
+- **Configuration**: Document all configuration options
+- **Examples**: Provide configuration examples
+
+## Profile Maintenance
+
+### Version Management
+- **Profile versions**: Track profile versions independently
+- **Compatibility**: Maintain compatibility with base system
+- **Migration**: Provide migration guides for profile updates
+- **Deprecation**: Clear deprecation process for old profiles
+
+### Quality Assurance
+- **Automated testing**: CI/CD tests for all profiles
+- **Security review**: Security review for each profile
+- **Performance testing**: Performance benchmarks
+- **Documentation review**: Keep documentation current
+
+## Profile Best Practices
+
+### Design Principles
+- **Single responsibility**: Each profile has one clear purpose
+- **Minimal dependencies**: Only include what's needed
+- **Secure defaults**: Security-first configuration
+- **Reproducible**: Deterministic profile builds
+
+### Implementation Guidelines
+- **Modular design**: Reusable components across profiles
+- **Clear interfaces**: Well-defined profile interfaces
+- **Error handling**: Robust error handling in profile scripts
+- **Logging**: Comprehensive logging for debugging
+
+Remember: Profiles are the primary way users customize ForgeOS for their specific needs. Make them clear, secure, and well-documented.

@@ -1,0 +1,59 @@
+---
+alwaysApply: true
+description: ForgeOS project overview and architecture guidance
+---
+
+# ForgeOS Project Overview
+
+ForgeOS is a **lightweight Linux distribution forged for the edge** with these core principles:
+
+## Project Mission
+- **Small, fast boot**: <2s to shell on QEMU/virt; <10s to network on Pi/industrial SBCs
+- **Deterministic builds**: pinned versions, reproducible configs, single `make` entrypoint
+- **Edge-first ops**: offline-friendly, resilient updates, robust logging, safe remote access
+- **Secure by default**: least privilege, signed artifacts, cgroups isolation, MAC (AppArmor)
+- **Modular**: choose your libc, init, and package system per "profile"
+
+## Key Architecture Components
+
+### Build System
+- **Cross toolchains**: musl (default) and glibc tracks for aarch64/x86_64
+- **Makefile-driven**: single entrypoint for all build stages
+- **Reproducible**: `SOURCE_DATE_EPOCH`, deterministic flags, signed artifacts
+
+### Core Components
+- **Linux Kernel**: hardened config with AppArmor, seccomp, KASLR
+- **Userland**: BusyBox-based with optional systemd/openrc profiles
+- **Package System**: apk (Alpine-style) with signed repositories
+- **Security**: nftables firewall, AppArmor profiles, secure mounts
+
+### Target Environments
+- **Build host**: Apple Silicon (ARM64) macOS with QEMU/HVF
+- **Primary targets**: aarch64 edge devices (Raspberry Pi 5, NXP i.MX8, Ampere, Jetson)
+- **Boot modes**: QEMU `-M virt`, U-Boot+EFI (boards), GRUB/EFI (x86_64)
+
+## Project Structure
+```
+forgeos/
+├─ Makefile                    # Main build orchestrator
+├─ toolchains/                 # Cross-compilation toolchains
+├─ kernel/                     # Linux kernel + patches + configs
+├─ userland/                   # BusyBox + overlay files
+├─ profiles/                   # Modular system profiles
+├─ scripts/                    # Build and utility scripts
+├─ security/                   # AppArmor, nftables, signing
+├─ docs/                       # Architecture and implementation docs
+└─ artifacts/                  # Build outputs (ignored in git)
+```
+
+## Development Philosophy
+- **Security-first**: Every component hardened by default
+- **Edge-optimized**: Minimal resource usage, offline-capable
+- **Reproducible**: Deterministic builds with SBOM and signatures
+- **Modular**: Profile-based system for different use cases
+
+## Key Documentation
+- [architecture.md](mdc:docs/architecture.md) - Complete system architecture
+- [implementation_plan.md](mdc:docs/implementation_plan.md) - Detailed development roadmap
+
+When working on ForgeOS, always consider security, reproducibility, and edge deployment constraints.

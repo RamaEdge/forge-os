@@ -1,0 +1,84 @@
+---
+globs: Makefile,scripts/*,toolchains/*
+description: Build system and Makefile conventions for ForgeOS
+---
+
+# ForgeOS Build System Rules
+
+## Makefile Structure
+The main [Makefile](mdc:Makefile) is the single entrypoint for all ForgeOS operations:
+
+### Core Targets
+- `toolchain` - Build cross-compilation toolchains (musl/glibc)
+- `kernel` - Build Linux kernel with hardened config
+- `busybox` - Build BusyBox userland
+- `rootfs` - Create root filesystem with packages
+- `initramfs` - Generate initramfs for early boot
+- `image` - Create final disk images (ext4, qcow2)
+- `qemu-run` - Launch QEMU for testing
+- `sign` - Sign all artifacts with cosign/minisign
+- `release` - Create release bundles
+
+### Build Environment
+- **Cross-compilation**: Use `CROSS_COMPILE` and `ARCH` variables
+- **Reproducible builds**: Always set `SOURCE_DATE_EPOCH`
+- **Toolchain paths**: Load from `toolchains/env.musl` or `toolchains/env.gnu`
+- **Output directory**: All artifacts go to `artifacts/` (gitignored)
+
+## Script Conventions
+All build scripts in [scripts/](mdc:scripts/) should:
+
+### Standard Structure
+```bash
+#!/bin/bash
+set -euo pipefail  # Strict error handling
+
+# Load environment
+source "$(dirname "$0")/../toolchains/env.musl"
+
+# Build logic here
+# ...
+
+# Install to artifacts/
+install -D target "$ARTIFACTS_DIR/path/to/target"
+```
+
+### Required Scripts
+- `build_kernel.sh` - Kernel compilation with config management
+- `build_busybox.sh` - BusyBox static build
+- `mk_initramfs.sh` - Initramfs creation with switch_root
+- `mk_disk.sh` - Root filesystem and disk image creation
+- `qemu_run.sh` - QEMU launch with proper device configuration
+- `sign_artifacts.sh` - Artifact signing with cosign/minisign
+
+## Toolchain Management
+- **musl track (default)**: `aarch64-linux-musl-*` via musl-cross-make
+- **glibc track (optional)**: `aarch64-linux-gnu-*` for compatibility
+- **Version pinning**: All versions in `toolchains/versions.mk`
+- **Environment helpers**: `toolchains/env.musl` and `toolchains/env.gnu`
+
+## Build Reproducibility
+- Use deterministic flags: `-Wl,--build-id=sha1`
+- Set `SOURCE_DATE_EPOCH` for consistent timestamps
+- Pin all dependency versions
+- Generate SBOM with `syft` for all artifacts
+- Sign all outputs with cryptographic signatures
+
+## QEMU Development Loop
+- **Console target**: `ttyAMA0` for aarch64 virt
+- **Acceleration**: Use `-accel hvf` on macOS
+- **Networking**: VirtIO net with DHCP
+- **Storage**: VirtIO block devices
+- **Debug**: `-nographic -serial mon:stdio` for headless
+
+## Error Handling
+- All scripts must use `set -euo pipefail`
+- Provide clear error messages with context
+- Clean up temporary files on failure
+- Log build steps for debugging
+
+## Performance Considerations
+- Cache toolchain builds (they're expensive)
+- Use parallel builds where safe (`make -j$(nproc)`)
+- Minimize disk I/O in build scripts
+- Consider Lima VM for Linux-specific tools on macOS

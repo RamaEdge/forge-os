@@ -1,3 +1,28 @@
+# ForgeOS Build Artifacts
+# ======================
+
+# Build directories
+build/
+artifacts/
+output/
+
+# Toolchain builds
+toolchains/output/
+toolchains/build/
+
+# Kernel builds
+kernel/build/
+kernel/output/
+
+# BusyBox builds
+userland/busybox/build/
+userland/busybox/output/
+
+# Package builds
+userland/packages/build/
+userland/packages/output/
+
+# Archive files
 *.tar
 *.tar.*
 *.jar
@@ -6,9 +31,35 @@
 *.deb
 *.zip
 *.tgz
+*.gz
+*.bz2
+*.xz
+
+# Log files
 *.log
 *.log.*
-*.sig
 
+# Signature files
+*.sig
+*.asc
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Legacy directories
 pkg/
 src/

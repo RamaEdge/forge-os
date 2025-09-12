@@ -1,0 +1,225 @@
+---
+globs: *.md,docs/*,.github/*,.gitlab-ci.yml
+description: Development workflow and contribution guidelines for ForgeOS
+---
+
+# ForgeOS Development Workflow
+
+## Development Environment Setup
+
+### Prerequisites
+- **macOS (Apple Silicon)**: Primary development platform
+- **QEMU with HVF**: For aarch64 emulation and testing
+- **Git**: Version control with proper commit signing
+- **Make**: Build system orchestration
+- **Lima VM (optional)**: For Linux-specific tools on macOS
+
+### Initial Setup
+```bash
+# Clone and setup
+git clone <forgeos-repo>
+cd forge-os
+git submodule update --init --recursive
+
+# Build toolchain and test
+make toolchain
+make qemu-run
+```
+
+## Development Workflow
+
+### Branch Strategy
+- **main**: Stable, tested code ready for release
+- **develop**: Integration branch for features
+- **feature/***: Feature development branches
+- **hotfix/***: Critical bug fixes
+- **release/***: Release preparation branches
+
+### Commit Guidelines
+- **Conventional commits**: Use conventional commit format
+- **Signed commits**: Always sign commits with GPG
+- **Atomic commits**: One logical change per commit
+- **Clear messages**: Descriptive commit messages
+
+### Commit Message Format
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+**Scopes**: `kernel`, `busybox`, `profiles`, `security`, `build`, `docs`
+
+## Code Quality Standards
+
+### Shell Scripts
+- **Shebang**: Always use `#!/bin/bash`
+- **Error handling**: `set -euo pipefail`
+- **Quoting**: Quote all variables and paths
+- **Functions**: Use functions for reusable code
+- **Documentation**: Comment complex logic
+
+### Makefiles
+- **Phony targets**: Declare all phony targets
+- **Dependencies**: Explicit dependency chains
+- **Variables**: Use consistent variable naming
+- **Error handling**: Proper error handling and cleanup
+
+### Documentation
+- **Markdown**: Use Markdown for all documentation
+- **Structure**: Clear headings and organization
+- **Examples**: Include practical examples
+- **Links**: Use relative links to project files
+
+## Testing Strategy
+
+### Local Testing
+- **QEMU testing**: Test all changes in QEMU first
+- **Profile testing**: Test all affected profiles
+- **Build testing**: Verify reproducible builds
+- **Security testing**: Run security checks
+
+### Automated Testing
+- **CI/CD**: GitHub Actions or GitLab CI
+- **Matrix builds**: Test all profiles and architectures
+- **Smoke tests**: Basic boot and functionality tests
+- **Security scans**: Automated vulnerability scanning
+
+### Testing Checklist
+- [ ] Code builds without errors
+- [ ] QEMU boots successfully
+- [ ] All services start correctly
+- [ ] Network configuration works
+- [ ] Security policies are enforced
+- [ ] Documentation is updated
+
+## Security Development
+
+### Security-First Development
+- **Threat modeling**: Consider security implications
+- **Least privilege**: Minimal required permissions
+- **Input validation**: Validate all inputs
+- **Error handling**: Secure error handling
+- **Logging**: Security-relevant logging
+
+### Security Review Process
+- **Code review**: Security-focused code reviews
+- **Static analysis**: Use security analysis tools
+- **Dynamic testing**: Runtime security testing
+- **Vulnerability scanning**: Regular security scans
+
+## Documentation Standards
+
+### Architecture Documentation
+- **Keep current**: Update docs with code changes
+- **Clear diagrams**: Use Mermaid for system diagrams
+- **Examples**: Provide concrete examples
+- **Troubleshooting**: Include common issues
+
+### API Documentation
+- **Function docs**: Document all public functions
+- **Parameter docs**: Document all parameters
+- **Return values**: Document return values
+- **Examples**: Provide usage examples
+
+### User Documentation
+- **Getting started**: Clear getting started guide
+- **Configuration**: Configuration reference
+- **Troubleshooting**: Common issues and solutions
+- **FAQ**: Frequently asked questions
+
+## Release Process
+
+### Version Management
+- **Semantic versioning**: Use semver with profile suffixes
+- **Release notes**: Comprehensive release notes
+- **Changelog**: Maintain detailed changelog
+- **Migration guides**: Provide migration instructions
+
+### Release Checklist
+- [ ] All tests pass
+- [ ] Security review completed
+- [ ] Documentation updated
+- [ ] Release notes written
+- [ ] Artifacts signed
+- [ ] SBOM generated
+- [ ] Announcement prepared
+
+## Contribution Guidelines
+
+### Pull Request Process
+1. **Fork and branch**: Create feature branch
+2. **Develop**: Implement changes with tests
+3. **Test**: Verify all tests pass
+4. **Document**: Update relevant documentation
+5. **Submit**: Create pull request with description
+6. **Review**: Address review feedback
+7. **Merge**: Merge after approval
+
+### Pull Request Requirements
+- **Description**: Clear description of changes
+- **Testing**: Evidence of testing
+- **Documentation**: Updated documentation
+- **Security**: Security considerations addressed
+- **Breaking changes**: Document breaking changes
+
+### Code Review Guidelines
+- **Security focus**: Security implications first
+- **Functionality**: Correctness and completeness
+- **Performance**: Performance implications
+- **Maintainability**: Code maintainability
+- **Documentation**: Documentation quality
+
+## Development Tools
+
+### Recommended Tools
+- **Editor**: VS Code with Cursor AI
+- **Terminal**: iTerm2 with proper shell configuration
+- **Git**: Git with proper signing configuration
+- **QEMU**: QEMU with HVF acceleration
+- **Lima**: Lima for Linux VM on macOS
+
+### Development Scripts
+- **Setup scripts**: Automated environment setup
+- **Test scripts**: Automated testing scripts
+- **Build scripts**: Development build scripts
+- **Debug scripts**: Debugging and troubleshooting
+
+## Troubleshooting
+
+### Common Issues
+- **Build failures**: Check toolchain and dependencies
+- **QEMU issues**: Verify QEMU configuration
+- **Network problems**: Check firewall and networking
+- **Permission issues**: Verify file permissions
+
+### Debugging Techniques
+- **Verbose logging**: Enable verbose build output
+- **QEMU debugging**: Use QEMU debugging features
+- **Serial console**: Use serial console for debugging
+- **Log analysis**: Analyze system logs
+
+### Getting Help
+- **Documentation**: Check project documentation
+- **Issues**: Search existing issues
+- **Discussions**: Use project discussions
+- **Community**: Engage with community
+
+## Performance Considerations
+
+### Build Performance
+- **Parallel builds**: Use parallel make where safe
+- **Caching**: Cache expensive build artifacts
+- **Incremental builds**: Support incremental builds
+- **Clean builds**: Provide clean build option
+
+### Runtime Performance
+- **Boot time**: Optimize for fast boot
+- **Memory usage**: Minimize memory footprint
+- **CPU usage**: Optimize CPU usage
+- **I/O performance**: Optimize I/O operations
+
+Remember: ForgeOS development requires attention to security, reproducibility, and edge deployment constraints. Always test thoroughly and document changes clearly.

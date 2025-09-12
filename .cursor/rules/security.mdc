@@ -1,0 +1,151 @@
+---
+globs: security/*,kernel/configs/*,profiles/*/overlay/etc/*
+description: Security and hardening guidelines for ForgeOS
+---
+
+# ForgeOS Security Rules
+
+## Security-First Philosophy
+ForgeOS is **secure by default** - every component must be hardened from the ground up.
+
+## Kernel Security
+### Required Kernel Configurations
+- **KASLR**: `CONFIG_RANDOMIZE_BASE=y`
+- **Stack Protection**: `CONFIG_STACKPROTECTOR_STRONG=y`
+- **Memory Protection**: `CONFIG_SLUB_DEBUG=y`, `CONFIG_HARDENED_USERCOPY=y`
+- **Mandatory Access Control**: `CONFIG_SECURITY_APPARMOR=y` (default), SELinux optional
+- **System Call Filtering**: `CONFIG_SECCOMP=y`, `CONFIG_SECCOMP_FILTER=y`
+- **Module Security**: `CONFIG_MODULE_SIG=y` when modules are used
+
+### Kernel Hardening Checklist
+- [ ] All security features enabled in [kernel/configs/](mdc:kernel/configs/)
+- [ ] No unnecessary drivers or features
+- [ ] Signed kernel modules if modules are used
+- [ ] Kernel config checksum stored for verification
+
+## Userspace Security
+
+### User Separation
+- **Non-root services**: Every daemon runs as dedicated user
+- **Privilege escalation**: `doas` or `sudo` with minimal policy
+- **Service accounts**: Create users in `/etc/passwd` with no shell access
+
+### Filesystem Security
+- **Secure mounts**: Use `nosuid`, `nodev`, `noexec` where appropriate
+- **Temporary filesystems**: `/tmp` as `tmpfs,noexec,nodev,nosuid`
+- **Read-only root**: `/usr` immutable where possible
+- **Log protection**: `/var/log` with size limits and rotation
+
+### Secrets Management
+- **Storage location**: `/etc/forgeos/secrets` with `0600` permissions
+- **Ephemeral keys**: Use tmpfs for temporary cryptographic material
+- **Key rotation**: Implement secure key rotation procedures
+
+## Network Security
+
+### Firewall (nftables)
+- **Default deny**: Block all inbound traffic by default
+- **Minimal egress**: Only allow required outbound connections
+- **Rate limiting**: Implement connection rate limits
+- **Logging**: Log dropped packets for monitoring
+
+### Network Hardening
+- **SSH security**: Key-only authentication, disable root login
+- **Service binding**: Bind services to specific interfaces only
+- **TLS everywhere**: Use TLS for all network communications
+- **Certificate management**: Proper CA and certificate handling
+
+## AppArmor Profiles
+All system services must have AppArmor profiles in [security/apparmor/](mdc:security/apparmor/):
+
+### Required Profiles
+- `usr.bin.ssh` - SSH daemon confinement
+- `usr.sbin.dropbear` - Dropbear SSH server
+- `usr.sbin.chronyd` - Time synchronization
+- `usr.sbin.update-agent` - Update service confinement
+
+### Profile Guidelines
+- **Principle of least privilege**: Minimal required permissions
+- **File access**: Explicit read/write permissions only
+- **Network access**: Specific network permissions
+- **Capability dropping**: Drop unnecessary capabilities
+
+## Package Security
+
+### Signed Packages
+- **Repository signing**: All packages signed with minisign/cosign
+- **Signature verification**: Enforce signature checking in apk
+- **Key management**: Secure key storage and rotation
+- **Supply chain**: SBOM generation for all packages
+
+### Package Hardening
+- **Minimal dependencies**: Only include required packages
+- **Version pinning**: Pin all package versions
+- **Security updates**: Automated security update process
+- **Vulnerability scanning**: Regular security audits
+
+## Boot Security
+
+### Secure Boot (when available)
+- **UEFI Secure Boot**: Support for hardware secure boot
+- **Kernel signing**: Sign kernel and initramfs
+- **Bootloader verification**: Verify bootloader integrity
+- **Measured boot**: TPM integration where available
+
+### Early Boot Security
+- **Initramfs verification**: Verify initramfs signature
+- **Root filesystem verification**: dm-verity or fs-verity
+- **Kernel command line**: Secure kernel parameters
+- **Console security**: Secure serial console access
+
+## Update Security
+
+### Signed Updates
+- **Update packages**: Sign all update packages
+- **Rollback capability**: Secure rollback mechanism
+- **Health checks**: Post-update verification
+- **Atomic updates**: Transactional update process
+
+### Update Verification
+- **Signature verification**: Verify all update signatures
+- **Integrity checks**: Verify package integrity
+- **Dependency validation**: Validate update dependencies
+- **Rollback testing**: Test rollback procedures
+
+## Monitoring and Logging
+
+### Security Logging
+- **Audit trail**: Log all security-relevant events
+- **Log integrity**: Protect log files from tampering
+- **Log rotation**: Secure log rotation with integrity
+- **Remote logging**: Optional secure log forwarding
+
+### Intrusion Detection
+- **File integrity**: Monitor critical system files
+- **Network monitoring**: Monitor for suspicious network activity
+- **Process monitoring**: Monitor for unusual process behavior
+- **Alert mechanisms**: Alert on security events
+
+## Security Testing
+
+### Automated Security Tests
+- **Vulnerability scanning**: Regular security scans
+- **Penetration testing**: Automated penetration tests
+- **Compliance checking**: Security compliance verification
+- **Fuzzing**: Fuzz testing for security vulnerabilities
+
+### Manual Security Review
+- **Code review**: Security-focused code reviews
+- **Architecture review**: Security architecture assessment
+- **Threat modeling**: Regular threat model updates
+- **Security documentation**: Keep security docs current
+
+## Incident Response
+
+### Security Incident Procedures
+- **Detection**: Automated security event detection
+- **Response**: Documented incident response procedures
+- **Recovery**: Secure system recovery procedures
+- **Lessons learned**: Post-incident analysis and improvement
+
+Remember: Security is not a feature, it's a fundamental requirement for every component in ForgeOS.
