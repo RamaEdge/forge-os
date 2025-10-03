@@ -28,16 +28,21 @@ JOBS := $(shell nproc 2>/dev/null || echo 4)
 
 all: install
 
-# Download kernel source
+# Download kernel source (THE-118: Use local downloads)
 download: $(KERNEL_SOURCE_DIR)
 
 $(KERNEL_SOURCE_DIR):
-	@echo "Setting up kernel build environment for v$(LINUX_VERSION)..."
+	@echo "Using Linux kernel v$(LINUX_VERSION) from local downloads..."
 	@mkdir -p $(BUILD_DIR)
-	@mkdir -p $(KERNEL_SOURCE_DIR)
-	@echo "Kernel build environment ready"
-	@echo "Note: Full kernel download requires internet access and ~100MB download"
-	@echo "For development, using placeholder kernel build"
+	@if [[ -f "$(PROJECT_ROOT)/packages/downloads/linux-$(LINUX_VERSION).tar.xz" ]]; then \
+		cd $(BUILD_DIR) && tar -xJf "$(PROJECT_ROOT)/packages/downloads/linux-$(LINUX_VERSION).tar.xz"; \
+		echo "Extracted kernel source to $(KERNEL_SOURCE_DIR)"; \
+	else \
+		echo "Error: Kernel source not found in local downloads"; \
+		echo "Please run 'make download-packages' first"; \
+		echo "For development, creating placeholder kernel build"; \
+		mkdir -p $(KERNEL_SOURCE_DIR); \
+	fi
 
 # Configure kernel
 configure: download
