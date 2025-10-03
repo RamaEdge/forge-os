@@ -37,7 +37,7 @@ export AR
 export STRIP
 
 # Phony targets
-.PHONY: all clean help toolchain kernel busybox rootfs initramfs image qemu-run sign release
+.PHONY: all clean help toolchain kernel busybox packages rootfs initramfs image qemu-run sign release
 
 # Default target
 all: image
@@ -51,6 +51,7 @@ help:
 	@echo "  toolchain    - Build cross-compilation toolchains"
 	@echo "  kernel       - Build Linux kernel"
 	@echo "  busybox      - Build BusyBox userland"
+	@echo "  packages     - Build APK packages and repository"
 	@echo "  rootfs       - Create root filesystem"
 	@echo "  initramfs    - Generate initramfs"
 	@echo "  image        - Create final disk images"
@@ -83,8 +84,20 @@ busybox: toolchain
 	@mkdir -p $(BUILD_DIR)/busybox
 	@./scripts/build_busybox.sh $(ARCH) $(BUILD_DIR)/busybox $(ARTIFACTS_DIR)
 
+# Packages target
+packages: toolchain
+	@echo "Building APK packages for $(ARCH)..."
+	@mkdir -p $(BUILD_DIR)/packages
+	@./scripts/build_apk.sh iproute2 $(ARCH) $(BUILD_DIR)/packages $(ARTIFACTS_DIR)
+	@./scripts/build_apk.sh chrony $(ARCH) $(BUILD_DIR)/packages $(ARTIFACTS_DIR)
+	@./scripts/build_apk.sh dropbear $(ARCH) $(BUILD_DIR)/packages $(ARTIFACTS_DIR)
+	@./scripts/build_apk.sh nftables $(ARCH) $(BUILD_DIR)/packages $(ARTIFACTS_DIR)
+	@./scripts/build_apk.sh ca-certificates $(ARCH) $(BUILD_DIR)/packages $(ARTIFACTS_DIR)
+	@./scripts/manage_repo.sh full $(ARCH)
+	@./scripts/sign_packages.sh $(ARTIFACTS_DIR)/packages $(PROJECT_ROOT)/security/keys
+
 # Root filesystem target
-rootfs: busybox
+rootfs: busybox packages
 	@echo "Creating root filesystem for profile $(PROFILE)..."
 	@mkdir -p $(BUILD_DIR)/rootfs
 	@./scripts/mk_rootfs.sh $(PROFILE) $(ARCH) $(BUILD_DIR)/rootfs $(ARTIFACTS_DIR)

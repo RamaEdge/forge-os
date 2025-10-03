@@ -1,0 +1,27 @@
+# ForgeOS chrony Package Build Script
+# Alpine-style APKBUILD for chrony
+
+pkgname="chrony"
+pkgver="4.3"
+pkgrel="0"
+pkgdesc="Lightweight NTP client and server"
+url="https://chrony.tuxfamily.org/"
+arch="aarch64"
+license="GPL-2.0"
+depends=""
+makedepends=""
+checkdepends=""
+subpackages=""
+
+source="https://download.tuxfamily.org/chrony/chrony-${pkgver}.tar.gz"
+
+build() {
+	cd "$builddir"
+	./configure --prefix=/usr --sysconfdir=/etc --localstatedir=/var
+	make
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install
+}
