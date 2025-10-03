@@ -17,12 +17,10 @@ echo "Setting up networking..."
 ifconfig lo 127.0.0.1 up
 route add -net 127.0.0.0 netmask 255.0.0.0 lo
 
-# Start network services
+# Start network services (THE-53)
 echo "Starting network services..."
-# DHCP client for network interface
-if [ -f /etc/network/interfaces ]; then
-    echo "Configuring network interfaces..."
-    # udhcpc will be started by network configuration
+if [ -x /etc/init.d/networking ]; then
+    /etc/init.d/networking start
 fi
 
 # Start system services
@@ -30,13 +28,17 @@ echo "Starting system services..."
 syslogd
 klogd
 
-# Start time synchronization
-echo "Starting time synchronization..."
-# chrony will be started if available
-
-# Start firewall
+# Start firewall (THE-53)
 echo "Starting firewall..."
-# nftables will be started if available
+if [ -x /etc/init.d/nftables ]; then
+    /etc/init.d/nftables start
+fi
+
+# Start time synchronization (THE-53)
+echo "Starting time synchronization..."
+if [ -x /etc/init.d/chronyd ]; then
+    /etc/init.d/chronyd start
+fi
 
 # Set hostname
 echo "Setting hostname..."

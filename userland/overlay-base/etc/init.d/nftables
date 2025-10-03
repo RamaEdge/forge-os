@@ -1,0 +1,99 @@
+#!/bin/sh
+# ForgeOS nftables Init Script
+# Implements THE-53 (Networking)
+
+### BEGIN INIT INFO
+# Provides:          nftables
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: nftables firewall
+# Description:       Load and manage nftables firewall rules
+### END INIT INFO
+
+NFTABLES_CONF="/etc/forgeos/nftables/base.nft"
+PIDFILE="/var/run/nftables.pid"
+
+start() {
+    echo "Loading nftables firewall rules..."
+    
+    if [ ! -f "$NFTABLES_CONF" ]; then
+        echo "Error: nftables configuration not found: $NFTABLES_CONF"
+        return 1
+    fi
+    
+    if ! command -v nft >/dev/null 2>&1; then
+        echo "Error: nft command not found"
+        return 1
+    fi
+    
+    # Load rules
+    if nft -f "$NFTABLES_CONF"; then
+        echo "nftables firewall loaded successfully"
+        echo $$ > "$PIDFILE"
+        return 0
+    else
+        echo "Error: Failed to load nftables rules"
+        return 1
+    fi
+}
+
+stop() {
+    echo "Flushing nftables rules..."
+    
+    if command -v nft >/dev/null 2>&1; then
+        nft flush ruleset
+        echo "nftables rules flushed"
+    fi
+    
+    rm -f "$PIDFILE"
+    return 0
+}
+
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+reload() {
+    echo "Reloading nftables rules..."
+    start
+}
+
+status() {
+    if command -v nft >/dev/null 2>&1; then
+        echo "nftables status:"
+        nft list ruleset
+        return 0
+    else
+        echo "nft command not available"
+        return 1
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    reload)
+        reload
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+        ;;
+esac
+
+exit $?
+
