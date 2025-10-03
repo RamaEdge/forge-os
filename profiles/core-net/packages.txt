@@ -1,0 +1,21 @@
+# ForgeOS core-net Profile Package List
+# Network-enabled minimal system
+
+# Base system (already included in userland)
+# busybox - built-in with userland base
+
+# Network packages
+# iproute2 - advanced network configuration
+# chrony - time synchronization
+# nftables - firewall
+# dropbear - SSH server (lightweight)
+
+# Security packages
+# ca-certificates - SSL/TLS certificates
+
+# Monitoring packages
+# logrotate - log management
+# rsyslog - log forwarding (optional)
+
+# Note: These will be implemented when package system is ready
+# For now, this serves as a specification for core-net profile

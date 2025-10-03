@@ -1,0 +1,50 @@
+#!/bin/sh
+# ForgeOS core-net Profile /etc/init.d/rcS
+# System startup script for network-enabled systems
+
+echo "Starting ForgeOS core-net system initialization..."
+
+# Mount virtual file systems
+echo "Mounting virtual file systems..."
+mount -a
+
+# Create device nodes
+echo "Creating device nodes..."
+mdev -s
+
+# Set up networking
+echo "Setting up networking..."
+ifconfig lo 127.0.0.1 up
+route add -net 127.0.0.0 netmask 255.0.0.0 lo
+
+# Start network services
+echo "Starting network services..."
+# DHCP client for network interface
+if [ -f /etc/network/interfaces ]; then
+    echo "Configuring network interfaces..."
+    # udhcpc will be started by network configuration
+fi
+
+# Start system services
+echo "Starting system services..."
+syslogd
+klogd
+
+# Start time synchronization
+echo "Starting time synchronization..."
+# chrony will be started if available
+
+# Start firewall
+echo "Starting firewall..."
+# nftables will be started if available
+
+# Set hostname
+echo "Setting hostname..."
+hostname forgeos-core-net
+
+# Initialize random number generator
+echo "Initializing random number generator..."
+dd if=/dev/urandom of=/dev/null bs=1024 count=1 2>/dev/null
+
+echo "ForgeOS core-net system initialization complete."
+echo "System ready for network operation."

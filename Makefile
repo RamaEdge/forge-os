@@ -88,6 +88,7 @@ rootfs: busybox
 	@echo "Creating root filesystem for profile $(PROFILE)..."
 	@mkdir -p $(BUILD_DIR)/rootfs
 	@./scripts/mk_rootfs.sh $(PROFILE) $(ARCH) $(BUILD_DIR)/rootfs $(ARTIFACTS_DIR)
+	@./scripts/apply_profile.sh $(PROFILE) $(ARTIFACTS_DIR)/rootfs
 
 # Initramfs target
 initramfs: busybox

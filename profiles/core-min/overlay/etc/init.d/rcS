@@ -1,0 +1,34 @@
+#!/bin/sh
+# ForgeOS core-min Profile /etc/init.d/rcS
+# System startup script for minimal embedded systems
+
+echo "Starting ForgeOS core-min system initialization..."
+
+# Mount virtual file systems
+echo "Mounting virtual file systems..."
+mount -a
+
+# Create device nodes
+echo "Creating device nodes..."
+mdev -s
+
+# Set up basic networking (loopback only for core-min)
+echo "Setting up loopback networking..."
+ifconfig lo 127.0.0.1 up
+route add -net 127.0.0.0 netmask 255.0.0.0 lo
+
+# Start minimal system services
+echo "Starting system services..."
+syslogd
+klogd
+
+# Set hostname
+echo "Setting hostname..."
+hostname forgeos-core-min
+
+# Initialize random number generator
+echo "Initializing random number generator..."
+dd if=/dev/urandom of=/dev/null bs=1024 count=1 2>/dev/null
+
+echo "ForgeOS core-min system initialization complete."
+echo "System ready for embedded/headless operation."

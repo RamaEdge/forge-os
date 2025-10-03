@@ -1,0 +1,14 @@
+# ForgeOS core-net Profile /etc/inittab
+# BusyBox init configuration for network-enabled systems
+
+# System startup
+::sysinit:/etc/init.d/rcS
+
+# Console shell on serial port
+ttyAMA0::respawn:/bin/sh
+
+# SSH daemon (if available)
+# ::respawn:/usr/sbin/dropbear -F
+
+# System shutdown
+::shutdown:/etc/init.d/rcK

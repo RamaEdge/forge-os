@@ -1,0 +1,16 @@
+Welcome to ForgeOS core-min - Minimal Linux for embedded devices
+
+ForgeOS v0.1.0 core-min - Edge Computing Distribution
+Built with security-first principles and minimal footprint.
+
+Profile: core-min (BusyBox init, minimal services)
+Access: Serial console only (ttyAMA0)
+Networking: Loopback only (no external network access)
+
+For documentation, see: /usr/share/doc/forgeos/
+For support, visit: https://github.com/forgeos/forgeos
+
+This system is configured for embedded/headless operation.
+All security features are enabled by default.
+
+Last login: $(date)

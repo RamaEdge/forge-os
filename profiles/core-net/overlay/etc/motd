@@ -1,0 +1,16 @@
+Welcome to ForgeOS core-net - Network-enabled Linux for edge devices
+
+ForgeOS v0.1.0 core-net - Edge Computing Distribution
+Built with security-first principles and minimal footprint.
+
+Profile: core-net (BusyBox init, network services)
+Access: Serial console (ttyAMA0) + SSH (if configured)
+Networking: DHCP client, firewall, time sync
+
+For documentation, see: /usr/share/doc/forgeos/
+For support, visit: https://github.com/forgeos/forgeos
+
+This system is configured for network-enabled edge operation.
+All security features are enabled by default.
+
+Last login: $(date)

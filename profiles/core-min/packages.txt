@@ -1,0 +1,18 @@
+# ForgeOS core-min Profile Package List
+# Minimal system for embedded/headless devices
+
+# Base system (already included in userland)
+# busybox - built-in with userland base
+
+# Essential packages for core-min
+# Note: These will be implemented when package system is ready
+# For now, this serves as a specification
+
+# Network utilities (if needed beyond BusyBox)
+# iproute2 - advanced network configuration
+# chrony - time synchronization
+
+# Security (if needed)
+# nftables - firewall (minimal rules)
+
+# No additional packages for core-min - keep it minimal

@@ -1,0 +1,11 @@
+# ForgeOS core-min Profile /etc/inittab
+# BusyBox init configuration for minimal embedded systems
+
+# System startup
+::sysinit:/etc/init.d/rcS
+
+# Console shell on serial port
+ttyAMA0::respawn:/bin/sh
+
+# System shutdown
+::shutdown:/etc/init.d/rcK
