@@ -1,0 +1,29 @@
+#!/bin/sh
+# ForgeOS core-net Profile /etc/init.d/rcK
+# System shutdown script for network-enabled systems
+
+echo "Shutting down ForgeOS core-net system..."
+
+# Stop network services
+echo "Stopping network services..."
+killall udhcpc 2>/dev/null
+killall chronyd 2>/dev/null
+
+# Stop system services
+echo "Stopping system services..."
+killall klogd 2>/dev/null
+killall syslogd 2>/dev/null
+
+# Stop firewall
+echo "Stopping firewall..."
+# nftables cleanup if available
+
+# Unmount file systems
+echo "Unmounting file systems..."
+umount -a -r
+
+# Sync file systems
+echo "Syncing file systems..."
+sync
+
+echo "ForgeOS core-net system shutdown complete."

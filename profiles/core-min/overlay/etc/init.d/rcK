@@ -1,0 +1,20 @@
+#!/bin/sh
+# ForgeOS core-min Profile /etc/init.d/rcK
+# System shutdown script for minimal embedded systems
+
+echo "Shutting down ForgeOS core-min system..."
+
+# Stop system services
+echo "Stopping system services..."
+killall klogd 2>/dev/null
+killall syslogd 2>/dev/null
+
+# Unmount file systems
+echo "Unmounting file systems..."
+umount -a -r
+
+# Sync file systems
+echo "Syncing file systems..."
+sync
+
+echo "ForgeOS core-min system shutdown complete."
