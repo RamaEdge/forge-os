@@ -47,6 +47,37 @@ fi
 echo "Installing base configuration..."
 cp -r "$PROJECT_ROOT/userland/overlay-base"/* "$ARTIFACTS_DIR/rootfs/" 2>/dev/null || true
 
+# Set up APK package system
+echo "Setting up APK package system..."
+mkdir -p "$ARTIFACTS_DIR/rootfs/etc/apk"
+mkdir -p "$ARTIFACTS_DIR/rootfs/var/cache/apk"
+
+# Create APK repositories configuration
+cat > "$ARTIFACTS_DIR/rootfs/etc/apk/repositories" << EOF
+# ForgeOS APK Repositories
+# Local repository
+file:///usr/share/apk/repo
+
+# Remote repositories (if available)
+# https://dl-cdn.alpinelinux.org/alpine/v3.18/main
+# https://dl-cdn.alpinelinux.org/alpine/v3.18/community
+EOF
+
+# Install APK tools (placeholder)
+echo "Installing APK tools..."
+mkdir -p "$ARTIFACTS_DIR/rootfs/usr/bin"
+mkdir -p "$ARTIFACTS_DIR/rootfs/usr/share/apk/repo"
+
+# Copy repository packages if available
+if [[ -d "$PROJECT_ROOT/packages/repo/$ARCH/main" ]]; then
+    echo "Installing repository packages..."
+    cp -r "$PROJECT_ROOT/packages/repo/$ARCH/main"/* "$ARTIFACTS_DIR/rootfs/usr/share/apk/repo/" 2>/dev/null || true
+fi
+
+# Install profile-specific packages
+echo "Installing profile-specific packages..."
+"$PROJECT_ROOT/scripts/install_profile_packages.sh" "$PROFILE" "$ARCH" "$ARTIFACTS_DIR/rootfs"
+
 # Set proper permissions
 echo "Setting permissions..."
 chmod 755 "$ARTIFACTS_DIR/rootfs/etc/init.d/rcS" 2>/dev/null || true

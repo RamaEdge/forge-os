@@ -1,0 +1,27 @@
+# ForgeOS nftables Package Build Script
+# Alpine-style APKBUILD for nftables
+
+pkgname="nftables"
+pkgver="1.0.7"
+pkgrel="0"
+pkgdesc="Netfilter packet filtering framework"
+url="https://netfilter.org/projects/nftables/"
+arch="aarch64"
+license="GPL-2.0"
+depends=""
+makedepends=""
+checkdepends=""
+subpackages=""
+
+source="https://netfilter.org/projects/nftables/files/nftables-${pkgver}.tar.bz2"
+
+build() {
+	cd "$builddir"
+	./configure --prefix=/usr --sysconfdir=/etc
+	make
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install
+}

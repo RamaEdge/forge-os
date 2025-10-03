@@ -1,0 +1,30 @@
+# ForgeOS ca-certificates Package Build Script
+# Alpine-style APKBUILD for ca-certificates
+
+pkgname="ca-certificates"
+pkgver="20230311"
+pkgrel="0"
+pkgdesc="Common CA certificates"
+url="https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/"
+arch="aarch64"
+license="MPL-2.0"
+depends=""
+makedepends=""
+checkdepends=""
+subpackages=""
+
+source="https://curl.se/ca/cacert-${pkgver}.pem"
+
+build() {
+	cd "$builddir"
+	# Convert PEM to APK format
+	mkdir -p "$pkgdir/usr/share/ca-certificates"
+	cp "$srcdir/cacert-${pkgver}.pem" "$pkgdir/usr/share/ca-certificates/ca-certificates.crt"
+}
+
+package() {
+	cd "$builddir"
+	# Install certificates
+	mkdir -p "$pkgdir/usr/share/ca-certificates"
+	cp "$srcdir/cacert-${pkgver}.pem" "$pkgdir/usr/share/ca-certificates/ca-certificates.crt"
+}
