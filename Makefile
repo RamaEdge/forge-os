@@ -37,7 +37,7 @@ export AR
 export STRIP
 
 # Phony targets
-.PHONY: all clean help toolchain kernel busybox packages rootfs initramfs image qemu-run sign release
+.PHONY: all clean help toolchain kernel busybox packages rootfs initramfs image qemu-run qemu-initramfs qemu-both sign release
 
 # Default target
 all: image
@@ -55,7 +55,9 @@ help:
 	@echo "  rootfs       - Create root filesystem"
 	@echo "  initramfs    - Generate initramfs"
 	@echo "  image        - Create final disk images"
-	@echo "  qemu-run     - Launch QEMU for testing"
+	@echo "  qemu-run     - Launch QEMU with disk root"
+	@echo "  qemu-initramfs - Launch QEMU with initramfs only"
+	@echo "  qemu-both    - Launch QEMU with both initramfs and disk"
 	@echo "  sign         - Sign all artifacts"
 	@echo "  release      - Create release bundles"
 	@echo "  clean        - Clean build artifacts"
@@ -115,10 +117,18 @@ image: rootfs initramfs
 	@mkdir -p $(BUILD_DIR)/images
 	@./scripts/mk_disk.sh $(PROFILE) $(ARCH) $(BUILD_DIR)/images $(ARTIFACTS_DIR)
 
-# QEMU run target
+# QEMU run targets
 qemu-run: image
-	@echo "Launching QEMU..."
-	@./scripts/qemu_run.sh $(PROFILE) $(ARCH) $(ARTIFACTS_DIR)
+	@echo "Launching QEMU with disk root..."
+	@./scripts/qemu_run.sh $(PROFILE) $(ARCH) $(ARTIFACTS_DIR) disk
+
+qemu-initramfs: initramfs
+	@echo "Launching QEMU with initramfs only..."
+	@./scripts/qemu_run.sh $(PROFILE) $(ARCH) $(ARTIFACTS_DIR) initramfs
+
+qemu-both: image
+	@echo "Launching QEMU with both initramfs and disk (pivot root)..."
+	@./scripts/qemu_run.sh $(PROFILE) $(ARCH) $(ARTIFACTS_DIR) both
 
 # Sign artifacts target
 sign: image
