@@ -1,0 +1,104 @@
+#!/bin/sh
+# ForgeOS Networking Init Script
+# Implements THE-53 (Networking)
+
+### BEGIN INIT INFO
+# Provides:          networking
+# Required-Start:    $local_fs
+# Required-Stop:     $local_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Network initialization
+# Description:       Configure network interfaces and start DHCP client
+### END INIT INFO
+
+INTERFACES_FILE="/etc/network/interfaces"
+
+start() {
+    echo "Starting networking..."
+    
+    # Bring up loopback
+    echo "Configuring loopback interface..."
+    ip link set lo up
+    ip addr add 127.0.0.1/8 dev lo
+    
+    # Bring up primary interface with DHCP
+    # Check if eth0 exists
+    if ip link show eth0 >/dev/null 2>&1; then
+        echo "Configuring eth0 interface..."
+        ip link set eth0 up
+        
+        # Start DHCP client
+        if command -v udhcpc >/dev/null 2>&1; then
+            echo "Starting DHCP client on eth0..."
+            udhcpc -i eth0 -s /usr/share/udhcpc/default.script -b -p /var/run/udhcpc.eth0.pid
+        else
+            echo "Warning: udhcpc not found, DHCP client not started"
+        fi
+    else
+        echo "Warning: eth0 interface not found"
+    fi
+    
+    echo "Networking started"
+    return 0
+}
+
+stop() {
+    echo "Stopping networking..."
+    
+    # Kill DHCP client
+    if [ -f /var/run/udhcpc.eth0.pid ]; then
+        kill $(cat /var/run/udhcpc.eth0.pid) 2>/dev/null
+        rm -f /var/run/udhcpc.eth0.pid
+    fi
+    
+    # Bring down interfaces
+    if ip link show eth0 >/dev/null 2>&1; then
+        ip link set eth0 down
+    fi
+    
+    echo "Networking stopped"
+    return 0
+}
+
+restart() {
+    stop
+    sleep 1
+    start
+}
+
+status() {
+    echo "Network interfaces:"
+    ip link show
+    echo ""
+    echo "IP addresses:"
+    ip addr show
+    echo ""
+    echo "Routes:"
+    ip route show
+    echo ""
+    echo "DNS configuration:"
+    cat /etc/resolv.conf 2>/dev/null || echo "No DNS configuration"
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    restart)
+        restart
+        ;;
+    status)
+        status
+        ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
+esac
+
+exit $?
+

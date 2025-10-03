@@ -1,0 +1,22 @@
+#!/bin/sh
+# ForgeOS Network If-Up Script - Load Firewall Rules
+# Implements THE-53 (Networking)
+
+# Load nftables rules when network interface comes up
+# Only load on first interface or loopback
+
+NFTABLES_RULES="/etc/forgeos/nftables/base.nft"
+
+# Skip if not the primary interface
+if [ "$IFACE" != "lo" ] && [ "$IFACE" != "eth0" ]; then
+    exit 0
+fi
+
+# Load firewall rules
+if [ -f "$NFTABLES_RULES" ] && command -v nft >/dev/null 2>&1; then
+    logger -t nftables "Loading firewall rules for interface $IFACE"
+    nft -f "$NFTABLES_RULES" || logger -t nftables "Failed to load firewall rules"
+fi
+
+exit 0
+

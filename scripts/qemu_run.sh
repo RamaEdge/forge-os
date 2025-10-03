@@ -13,7 +13,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROFILE="${1:-core-min}"
 ARCH="${2:-aarch64}"
 ARTIFACTS_DIR="${3:-artifacts}"
-BOOT_MODE="${4:-initramfs}"  # initramfs or disk
+BOOT_MODE="${4:-initramfs}"  # initramfs, disk, or both
 
 # QEMU configuration
 QEMU_ARCH="aarch64"
@@ -22,6 +22,10 @@ QEMU_CPU="max"
 QEMU_ACCEL="hvf"
 QEMU_MEMORY="1024"
 QEMU_CONSOLE="ttyAMA0"
+
+# Development features (THE-53)
+ENABLE_VIRTFS="${ENABLE_VIRTFS:-false}"
+VIRTFS_HOST_PATH="${VIRTFS_HOST_PATH:-$PROJECT_ROOT}"
 
 echo "Launching QEMU for profile $PROFILE on $ARCH..."
 echo "Artifacts directory: $ARTIFACTS_DIR"
@@ -110,6 +114,12 @@ esac
 # Add network (optional)
 QEMU_CMD="$QEMU_CMD -netdev user,id=net0,hostfwd=tcp::2222-:22"
 QEMU_CMD="$QEMU_CMD -device virtio-net-pci,netdev=net0"
+
+# Add virtfs for development (optional - THE-53)
+if [ "$ENABLE_VIRTFS" = "true" ] || [ "$PROFILE" = "lab" ]; then
+    echo "Enabling virtfs host share: $VIRTFS_HOST_PATH -> /mnt/host"
+    QEMU_CMD="$QEMU_CMD -virtfs local,path=$VIRTFS_HOST_PATH,mount_tag=host_share,security_model=passthrough,id=host0"
+fi
 
 echo "QEMU command:"
 echo "$QEMU_CMD"
