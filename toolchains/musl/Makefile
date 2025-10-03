@@ -27,14 +27,20 @@ JOBS := $(shell nproc 2>/dev/null || echo 4)
 
 all: install
 
-# Download musl-cross-make
+# Download musl-cross-make (THE-118: Use local downloads)
 download: $(MUSL_CROSS_MAKE_TAR)
 
 $(MUSL_CROSS_MAKE_TAR):
-	@echo "Downloading musl-cross-make v$(MUSL_CROSS_MAKE_VERSION)..."
+	@echo "Using musl-cross-make v$(MUSL_CROSS_MAKE_VERSION) from local downloads..."
 	@mkdir -p $(BUILD_DIR)
-	@curl -L -o "$@" "$(MUSL_CROSS_MAKE_URL)"
-	@echo "Downloaded: $@"
+	@if [[ -f "$(PROJECT_ROOT)/packages/downloads/v$(MUSL_CROSS_MAKE_VERSION).tar.gz" ]]; then \
+		cp "$(PROJECT_ROOT)/packages/downloads/v$(MUSL_CROSS_MAKE_VERSION).tar.gz" "$@"; \
+		echo "Copied from local downloads: $@"; \
+	else \
+		echo "Error: Package not found in local downloads"; \
+		echo "Please run 'make download-packages' first"; \
+		exit 1; \
+	fi
 
 # Extract and configure
 configure: download

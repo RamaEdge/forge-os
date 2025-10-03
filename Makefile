@@ -37,7 +37,7 @@ export AR
 export STRIP
 
 # Phony targets
-.PHONY: all clean help toolchain kernel busybox packages rootfs initramfs image qemu-run qemu-initramfs qemu-both sign release
+.PHONY: all clean help download-packages clean-downloads toolchain kernel busybox packages rootfs initramfs image qemu-run qemu-initramfs qemu-both sign release
 
 # Default target
 all: image
@@ -48,6 +48,7 @@ help:
 	@echo "==================="
 	@echo ""
 	@echo "Available targets:"
+	@echo "  download-packages - Download all required packages (THE-118)"
 	@echo "  toolchain    - Build cross-compilation toolchains"
 	@echo "  kernel       - Build Linux kernel"
 	@echo "  busybox      - Build BusyBox userland"
@@ -61,12 +62,25 @@ help:
 	@echo "  sign         - Sign all artifacts"
 	@echo "  release      - Create release bundles"
 	@echo "  clean        - Clean build artifacts"
+	@echo "  clean-downloads - Clean downloaded packages"
 	@echo "  help         - Show this help"
 	@echo ""
 	@echo "Configuration:"
 	@echo "  PROFILE=$(PROFILE)  - System profile (core-min, core-net, service-sd)"
 	@echo "  ARCH=$(ARCH)        - Target architecture (aarch64, x86_64)"
 	@echo "  TOOLCHAIN=$(TOOLCHAIN) - Toolchain type (musl, gnu)"
+
+# Package download target (THE-118)
+download-packages:
+	@echo "Downloading all required packages..."
+	@./scripts/download_packages.sh
+	@echo "Package download completed"
+
+# Clean downloads target
+clean-downloads:
+	@echo "Cleaning downloaded packages..."
+	@rm -rf packages/downloads/*
+	@echo "Downloads cleaned"
 
 # Toolchain target
 toolchain:

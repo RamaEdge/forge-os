@@ -28,16 +28,21 @@ JOBS := $(shell nproc 2>/dev/null || echo 4)
 
 all: install
 
-# Download BusyBox source
+# Download BusyBox source (THE-118: Use local downloads)
 download: $(BUSYBOX_SOURCE_DIR)
 
 $(BUSYBOX_SOURCE_DIR):
-	@echo "Setting up BusyBox build environment for v$(BUSYBOX_VERSION)..."
+	@echo "Using BusyBox v$(BUSYBOX_VERSION) from local downloads..."
 	@mkdir -p $(BUILD_DIR)
-	@mkdir -p $(BUSYBOX_SOURCE_DIR)
-	@echo "BusyBox build environment ready"
-	@echo "Note: Full BusyBox download requires internet access and ~2MB download"
-	@echo "For development, using placeholder BusyBox build"
+	@if [[ -f "$(PROJECT_ROOT)/packages/downloads/busybox-$(BUSYBOX_VERSION).tar.bz2" ]]; then \
+		cd $(BUILD_DIR) && tar -xjf "$(PROJECT_ROOT)/packages/downloads/busybox-$(BUSYBOX_VERSION).tar.bz2"; \
+		echo "Extracted BusyBox source to $(BUSYBOX_SOURCE_DIR)"; \
+	else \
+		echo "Error: BusyBox source not found in local downloads"; \
+		echo "Please run 'make download-packages' first"; \
+		echo "For development, creating placeholder BusyBox build"; \
+		mkdir -p $(BUSYBOX_SOURCE_DIR); \
+	fi
 
 # Configure BusyBox
 configure: download
