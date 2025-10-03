@@ -1,0 +1,179 @@
+#!/usr/sbin/nft -f
+# ForgeOS Base Firewall Rules
+# Security Baseline - THE-52
+# Default-deny inbound, minimal egress
+
+# Flush existing ruleset
+flush ruleset
+
+# Define variables for common ports and networks
+define SSH_PORT = 22
+define HTTPS_PORT = 443
+define DNS_PORT = 53
+define NTP_PORT = 123
+define CHRONY_PORT = 323
+
+# Table for filtering
+table inet filter {
+    # Inbound traffic chain
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        # Accept established/related connections
+        ct state established,related accept comment "Allow established connections"
+
+        # Accept loopback traffic
+        iif lo accept comment "Allow loopback"
+
+        # Drop invalid packets
+        ct state invalid drop comment "Drop invalid packets"
+
+        # Rate limit for connection tracking
+        ct state new limit rate 100/second accept
+
+        # ICMP/ICMPv6 (rate limited)
+        ip protocol icmp limit rate 10/second accept comment "Allow ICMP (rate limited)"
+        ip6 nexthdr ipv6-icmp limit rate 10/second accept comment "Allow ICMPv6 (rate limited)"
+
+        # SSH (rate limited to prevent brute force)
+        tcp dport $SSH_PORT ct state new limit rate 5/minute accept comment "Allow SSH (rate limited)"
+
+        # Drop everything else (log for monitoring)
+        counter log prefix "NFT-INPUT-DROP: " drop
+    }
+
+    # Outbound traffic chain
+    chain output {
+        type filter hook output priority 0; policy accept;
+
+        # Accept established/related connections
+        ct state established,related accept comment "Allow established connections"
+
+        # Accept loopback traffic
+        oif lo accept comment "Allow loopback"
+
+        # Drop invalid packets
+        ct state invalid drop comment "Drop invalid packets"
+
+        # Allow DNS queries
+        udp dport $DNS_PORT accept comment "Allow DNS"
+        tcp dport $DNS_PORT accept comment "Allow DNS over TCP"
+
+        # Allow NTP/Chrony time sync
+        udp dport $NTP_PORT accept comment "Allow NTP"
+        udp dport $CHRONY_PORT accept comment "Allow Chrony"
+
+        # Allow HTTPS for updates and package downloads
+        tcp dport $HTTPS_PORT accept comment "Allow HTTPS"
+
+        # Allow HTTP (for package repositories)
+        tcp dport 80 accept comment "Allow HTTP for packages"
+
+        # Log unexpected outbound (for monitoring)
+        ct state new counter log prefix "NFT-OUTPUT-NEW: "
+    }
+
+    # Forward traffic chain (for routing/NAT)
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+
+        # Accept established/related connections
+        ct state established,related accept comment "Allow established connections"
+
+        # Drop invalid packets
+        ct state invalid drop comment "Drop invalid packets"
+
+        # Drop everything else (log for monitoring)
+        counter log prefix "NFT-FORWARD-DROP: " drop
+    }
+}
+
+# Table for rate limiting and DoS protection
+table inet ratelimit {
+    # Connection rate limiting
+    set ratelimit_ssh {
+        type ipv4_addr
+        timeout 1m
+        flags dynamic
+    }
+
+    set ratelimit_ssh6 {
+        type ipv6_addr
+        timeout 1m
+        flags dynamic
+    }
+
+    # SYN flood protection
+    chain input {
+        type filter hook input priority -10;
+
+        # SYN flood protection
+        tcp flags syn tcp flags & (fin|syn|rst|ack) == syn \
+            ct state new \
+            limit rate over 60/second burst 100 packets \
+            drop comment "SYN flood protection"
+    }
+}
+
+# Table for logging suspicious activity
+table inet logging {
+    # Port scan detection
+    set port_scanners {
+        type ipv4_addr
+        timeout 1h
+        flags dynamic
+    }
+
+    set port_scanners6 {
+        type ipv6_addr
+        timeout 1h
+        flags dynamic
+    }
+
+    chain input {
+        type filter hook input priority -100;
+
+        # Log port scans
+        tcp flags & (fin|syn|rst|psh|ack|urg) == fin|syn|rst|psh|ack|urg \
+            log prefix "XMAS-SCAN: " \
+            add @port_scanners { ip saddr } \
+            drop
+
+        tcp flags & (fin|syn|rst|psh|ack|urg) == 0 \
+            log prefix "NULL-SCAN: " \
+            add @port_scanners { ip saddr } \
+            drop
+
+        tcp flags syn tcp flags & (fin|syn|rst|ack) == syn \
+            ct state new \
+            tcp dport != 22 \
+            limit rate over 10/second \
+            log prefix "PORT-SCAN: " \
+            add @port_scanners { ip saddr } \
+            drop
+    }
+}
+
+# Table for blacklisting (can be populated by IDS)
+table inet blacklist {
+    set blacklist_v4 {
+        type ipv4_addr
+        flags timeout
+        comment "IPv4 blacklist"
+    }
+
+    set blacklist_v6 {
+        type ipv6_addr
+        flags timeout
+        comment "IPv6 blacklist"
+    }
+
+    chain input {
+        type filter hook input priority -200;
+
+        # Drop blacklisted IPs
+        ip saddr @blacklist_v4 drop comment "Drop blacklisted IPv4"
+        ip6 saddr @blacklist_v6 drop comment "Drop blacklisted IPv6"
+    }
+}
+

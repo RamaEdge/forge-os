@@ -1,0 +1,64 @@
+# AppArmor profile for chrony time synchronization daemon
+# ForgeOS Security - THE-52
+
+#include <tunables/global>
+
+/usr/sbin/chronyd {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  # Capabilities
+  capability net_bind_service,
+  capability sys_time,
+  capability setuid,
+  capability setgid,
+  capability ipc_lock,
+  capability sys_resource,
+
+  # Network access
+  network inet dgram,
+  network inet6 dgram,
+  network inet stream,
+  network inet6 stream,
+
+  # Configuration
+  /etc/chrony/ r,
+  /etc/chrony/** r,
+  /etc/chrony.conf r,
+
+  # Runtime data
+  /var/lib/chrony/ rw,
+  /var/lib/chrony/** rw,
+  /run/chrony/ rw,
+  /run/chrony/** rw,
+  /run/chronyd.pid rw,
+
+  # Drift and RTC files
+  /var/lib/chrony/chrony.drift rw,
+  /var/lib/chrony/rtc rw,
+
+  # Logging
+  /var/log/chrony/ rw,
+  /var/log/chrony/** rw,
+
+  # Proc filesystem
+  @{PROC}/sys/kernel/random/uuid r,
+
+  # Device access
+  /dev/ptp* rw,
+  /dev/rtc* rw,
+
+  # DNS resolution
+  /etc/hosts r,
+  /etc/resolv.conf r,
+
+  # System time
+  /sys/devices/system/clocksource/clocksource*/current_clocksource r,
+
+  # Deny sensitive access
+  deny /etc/shadow rw,
+  deny /etc/passwd w,
+  deny /home/** rw,
+  deny /root/** rw,
+}
+
