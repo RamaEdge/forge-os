@@ -1,0 +1,39 @@
+#!/usr/sbin/nft -f
+# ForgeOS Core-Net Profile Firewall Rules
+# Extends base.nft with additional network services
+
+# Include base rules
+include "/etc/forgeos/nftables/base.nft"
+
+# Additional rules for core-net profile
+table inet filter {
+    # Additional inbound rules for network services
+    chain input {
+        # Allow DHCP client
+        udp sport 67 udp dport 68 accept comment "Allow DHCP client"
+
+        # Allow DHCPv6 client
+        udp sport 547 udp dport 546 accept comment "Allow DHCPv6 client"
+
+        # Allow mDNS for service discovery
+        udp dport 5353 ip daddr 224.0.0.251 accept comment "Allow mDNS IPv4"
+        udp dport 5353 ip6 daddr ff02::fb accept comment "Allow mDNS IPv6"
+
+        # Allow IGMP for multicast
+        ip protocol igmp accept comment "Allow IGMP"
+    }
+
+    # Additional outbound rules for network services
+    chain output {
+        # Allow DHCP client
+        udp sport 68 udp dport 67 accept comment "Allow DHCP client"
+
+        # Allow DHCPv6 client
+        udp sport 546 udp dport 547 accept comment "Allow DHCPv6 client"
+
+        # Allow mDNS for service discovery
+        udp dport 5353 ip daddr 224.0.0.251 accept comment "Allow mDNS IPv4"
+        udp dport 5353 ip6 daddr ff02::fb accept comment "Allow mDNS IPv6"
+    }
+}
+

@@ -1,0 +1,125 @@
+# AppArmor profile for OpenSSH daemon
+# ForgeOS Security - THE-52
+
+#include <tunables/global>
+
+/usr/bin/ssh {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/authentication>
+  #include <abstractions/consoles>
+
+  # Capabilities
+  capability net_bind_service,
+  capability setgid,
+  capability setuid,
+  capability sys_chroot,
+  capability sys_resource,
+  capability audit_write,
+  capability dac_override,
+  capability dac_read_search,
+
+  # Network access
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+
+  # SSH configuration and keys
+  /etc/ssh/ r,
+  /etc/ssh/** r,
+  /etc/ssh/ssh_host_* r,
+  /etc/ssh/sshd_config r,
+  /etc/ssh/moduli r,
+
+  # User authentication
+  /etc/passwd r,
+  /etc/group r,
+  /etc/shadow r,
+  /etc/shells r,
+  /etc/security/** r,
+  /etc/login.defs r,
+
+  # PAM
+  /lib/**/security/*.so mr,
+  /etc/pam.d/* r,
+
+  # Logging
+  /var/log/auth.log w,
+  /var/log/sshd.log w,
+  /var/log/lastlog rw,
+  /var/log/wtmp rw,
+  /var/log/btmp rw,
+
+  # Runtime
+  /run/sshd/ rw,
+  /run/sshd/** rw,
+  /run/sshd.pid rw,
+
+  # Home directories
+  /home/*/ r,
+  /home/*/.ssh/ r,
+  /home/*/.ssh/** r,
+
+  # Root home
+  /root/ r,
+  /root/.ssh/ r,
+  /root/.ssh/** r,
+
+  # Process execution
+  /bin/sh ix,
+  /bin/bash ix,
+  /bin/ash ix,
+  /usr/bin/* Px -> default,
+
+  # Proc filesystem
+  @{PROC}/sys/kernel/random/uuid r,
+  @{PROC}/sys/crypto/** r,
+  @{PROC}/[0-9]*/fd/ r,
+  @{PROC}/[0-9]*/stat r,
+  @{PROC}/[0-9]*/limits r,
+
+  # Temporary files
+  /tmp/ r,
+  /tmp/** rw,
+  /var/tmp/ r,
+  /var/tmp/** rw,
+
+  # Device access
+  /dev/tty rw,
+  /dev/pts/* rw,
+  /dev/urandom r,
+  /dev/random r,
+
+  # Privilege separation
+  /usr/sbin/sshd-session Px,
+
+  # Deny write access to sensitive files
+  deny /etc/shadow w,
+  deny /etc/passwd w,
+  deny /etc/group w,
+  deny /etc/ssh/ssh_host_* w,
+}
+
+# Profile for SSH session process (privilege separation)
+/usr/sbin/sshd-session {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  capability setgid,
+  capability setuid,
+
+  # User shells
+  /bin/sh Ux,
+  /bin/bash Ux,
+  /bin/ash Ux,
+
+  # Home directories
+  /home/*/** rw,
+  /root/** rw,
+
+  # Device access
+  /dev/tty rw,
+  /dev/pts/* rw,
+}
+

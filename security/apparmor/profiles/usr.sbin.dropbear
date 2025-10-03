@@ -1,0 +1,76 @@
+# AppArmor profile for Dropbear SSH server
+# ForgeOS Security - THE-52
+
+#include <tunables/global>
+
+/usr/sbin/dropbear {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/authentication>
+
+  # Capabilities
+  capability net_bind_service,
+  capability setgid,
+  capability setuid,
+  capability sys_chroot,
+  capability sys_resource,
+  capability audit_write,
+
+  # Network access
+  network inet stream,
+  network inet6 stream,
+
+  # Host keys
+  /etc/dropbear/ r,
+  /etc/dropbear/* r,
+  /etc/ssh/ r,
+  /etc/ssh/ssh_host_* r,
+
+  # Configuration
+  /etc/passwd r,
+  /etc/group r,
+  /etc/shadow r,
+  /etc/shells r,
+
+  # Logging
+  /var/log/auth.log w,
+  /var/log/dropbear.log w,
+
+  # Process execution
+  /bin/sh ix,
+  /bin/bash ix,
+  /bin/ash ix,
+  /usr/bin/* ix,
+
+  # Home directories (limited)
+  /home/*/ r,
+  /home/*/** rw,
+
+  # Root home
+  /root/ r,
+  /root/** rw,
+
+  # Proc filesystem
+  @{PROC}/sys/kernel/random/uuid r,
+  @{PROC}/sys/crypto/* r,
+
+  # Temporary files
+  /tmp/ r,
+  /tmp/** rw,
+  /var/tmp/ r,
+  /var/tmp/** rw,
+
+  # Device access
+  /dev/tty rw,
+  /dev/pts/* rw,
+  /dev/urandom r,
+
+  # System binaries that may be executed by users
+  /usr/sbin/nologin ix,
+
+  # Deny access to sensitive files
+  deny /etc/shadow w,
+  deny /etc/passwd w,
+  deny /etc/group w,
+}
+

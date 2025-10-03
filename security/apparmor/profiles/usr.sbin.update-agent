@@ -1,0 +1,95 @@
+# AppArmor profile for ForgeOS Update Agent
+# ForgeOS Security - THE-52
+
+#include <tunables/global>
+
+/usr/sbin/update-agent {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  # Capabilities - minimal privileges
+  capability dac_override,
+  capability dac_read_search,
+  capability fowner,
+  capability chown,
+
+  # Network access for updates
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+
+  # Configuration
+  /etc/forgeos/ r,
+  /etc/forgeos/update.conf r,
+  /etc/forgeos/keys/ r,
+  /etc/forgeos/keys/** r,
+
+  # Update repository access
+  /usr/share/apk/repo/ r,
+  /usr/share/apk/repo/** rw,
+
+  # Package verification keys
+  /etc/apk/keys/ r,
+  /etc/apk/keys/** r,
+
+  # APK database
+  /var/lib/apk/** r,
+  /etc/apk/** r,
+
+  # Download staging area
+  /var/cache/apk/ rw,
+  /var/cache/apk/** rw,
+  /tmp/update-agent/ rw,
+  /tmp/update-agent/** rw,
+
+  # Update metadata
+  /var/lib/forgeos/updates/ rw,
+  /var/lib/forgeos/updates/** rw,
+  /var/lib/forgeos/update-status rw,
+
+  # Logging
+  /var/log/update-agent.log w,
+  /var/log/updates/ rw,
+  /var/log/updates/** rw,
+
+  # Runtime
+  /run/update-agent/ rw,
+  /run/update-agent/** rw,
+  /run/update-agent.pid rw,
+
+  # Proc filesystem
+  @{PROC}/sys/kernel/random/uuid r,
+  @{PROC}/version r,
+  @{PROC}/uptime r,
+
+  # Execute APK for package management
+  /sbin/apk ix,
+  /usr/bin/apk ix,
+
+  # Execute verification tools
+  /usr/bin/minisign ix,
+  /usr/bin/cosign ix,
+
+  # DNS resolution
+  /etc/hosts r,
+  /etc/resolv.conf r,
+
+  # TLS certificates
+  /etc/ssl/certs/ r,
+  /etc/ssl/certs/** r,
+  /etc/ca-certificates/ r,
+  /etc/ca-certificates/** r,
+
+  # Deny access to sensitive areas
+  deny /home/** rw,
+  deny /root/.ssh/** rw,
+  deny /etc/shadow rw,
+  deny /etc/passwd w,
+  deny /etc/group w,
+
+  # Deny execution of arbitrary binaries
+  deny /tmp/** x,
+  deny /var/tmp/** x,
+}
+

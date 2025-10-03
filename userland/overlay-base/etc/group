@@ -1,5 +1,6 @@
 # ForgeOS /etc/group
 # Group database for edge computing
+# Security-hardened with service groups - THE-52
 
 root:x:0:
 daemon:x:1:
@@ -38,5 +39,23 @@ sasl:x:45:
 plugdev:x:46:
 staff:x:50:
 games:x:60:
-users:x:100:
+
+# Service groups
+sshd:x:100:
+dropbear:x:101:
+chrony:x:102:
+update:x:103:
+ntp:x:104:
+log:x:105:
+
+# System groups
+systemd-network:x:110:
+systemd-resolve:x:111:
+systemd-timesync:x:112:
+
+# User groups
+users:x:1000:
+forgeos:x:1000:
+
+# Nobody group
 nogroup:x:65534:
