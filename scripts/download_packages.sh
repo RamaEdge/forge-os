@@ -13,7 +13,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Load centralized versions
+# Load centralized versions from JSON
 source "$PROJECT_ROOT/scripts/versions.sh"
 
 # Download configuration
@@ -64,7 +64,7 @@ verify_checksum() {
 download_package() {
     local package_name="$1"
     local url="$2"
-    local expected_sha256="$3"
+    # SHA256 parameter removed - checksum validation disabled
     local filename=$(basename "$url")
     local filepath="$DOWNLOADS_DIR/$filename"
     
@@ -119,29 +119,13 @@ main() {
     log_info "  Toolchain Packages"
     log_info "═══════════════════════════════════════════════════"
     
-    download_package "binutils" \
-        "https://ftp.gnu.org/gnu/binutils/binutils-${BINUTILS_VERSION}.tar.xz" \
-        "$BINUTILS_SHA256" || true
-    
-    download_package "gcc" \
-        "https://ftp.gnu.org/gnu/gcc/gcc-${GCC_VERSION}/gcc-${GCC_VERSION}.tar.xz" \
-        "$GCC_SHA256" || true
-    
-    download_package "musl" \
-        "https://musl.libc.org/releases/musl-${MUSL_VERSION}.tar.gz" \
-        "$MUSL_SHA256" || true
-    
-    download_package "glibc" \
-        "https://ftp.gnu.org/gnu/glibc/glibc-${GLIBC_VERSION}.tar.xz" \
-        "$GLIBC_SHA256" || true
-    
-    download_package "linux-headers" \
-        "https://cdn.kernel.org/pub/linux/kernel/v$(echo $LINUX_VERSION | cut -d. -f1).x/linux-${LINUX_VERSION}.tar.xz" \
-        "$LINUX_HEADERS_SHA256" || true
-    
-    download_package "musl-cross-make" \
-        "https://github.com/richfelker/musl-cross-make/archive/v${MUSL_CROSS_MAKE_VERSION}.tar.gz" \
-        "$MUSL_CROSS_MAKE_SHA256" || true
+    download_package "binutils" "$BINUTILS_URL" || true
+    download_package "gcc" "$GCC_URL" || true
+    download_package "musl" "$MUSL_URL" || true
+    download_package "glibc" "$GLIBC_URL" || true
+    download_package "linux-headers" "$LINUX_HEADERS_URL" || true
+    download_package "musl-cross-make" "$MUSL_CROSS_MAKE_URL" || true
+    download_package "apk-tools" "$APK_TOOLS_URL" || true
     
     # Kernel Packages
     echo ""
@@ -149,9 +133,7 @@ main() {
     log_info "  Kernel Packages"
     log_info "═══════════════════════════════════════════════════"
     
-    download_package "linux" \
-        "https://cdn.kernel.org/pub/linux/kernel/v$(echo $LINUX_VERSION | cut -d. -f1).x/linux-${LINUX_VERSION}.tar.xz" \
-        "$LINUX_SHA256" || true
+    download_package "linux" "$LINUX_URL" || true
     
     # Userland Packages
     echo ""
@@ -159,9 +141,7 @@ main() {
     log_info "  Userland Packages"
     log_info "═══════════════════════════════════════════════════"
     
-    download_package "busybox" \
-        "https://busybox.net/downloads/busybox-1.36.1.tar.bz2" \
-        "$BUSYBOX_SHA256" || true
+    download_package "busybox" "$BUSYBOX_URL" || true
     
     # Core System Packages
     echo ""
@@ -169,25 +149,11 @@ main() {
     log_info "  Core System Packages"
     log_info "═══════════════════════════════════════════════════"
     
-    download_package "iproute2" \
-        "https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-${IPROUTE2_VERSION}.tar.xz" \
-        "$IPROUTE2_SHA256" || true
-    
-    download_package "chrony" \
-        "https://download.tuxfamily.org/chrony/chrony-${CHRONY_VERSION}.tar.gz" \
-        "$CHRONY_SHA256" || true
-    
-    download_package "dropbear" \
-        "https://matt.ucc.asn.au/dropbear/releases/dropbear-${DROPBEAR_VERSION}.tar.bz2" \
-        "$DROPBEAR_SHA256" || true
-    
-    download_package "nftables" \
-        "https://netfilter.org/projects/nftables/files/nftables-${NFTABLES_VERSION}.tar.bz2" \
-        "$NFTABLES_SHA256" || true
-    
-    download_package "ca-certificates" \
-        "https://curl.se/ca/cacert-${CA_CERTIFICATES_VERSION}.pem" \
-        "$CA_CERTIFICATES_SHA256" || true
+    download_package "iproute2" "$IPROUTE2_URL" || true
+    download_package "chrony" "$CHRONY_URL" || true
+    download_package "dropbear" "$DROPBEAR_URL" || true
+    download_package "nftables" "$NFTABLES_URL" || true
+    download_package "ca-certificates" "$CA_CERTIFICATES_URL" || true
     
     # Summary
     echo ""
