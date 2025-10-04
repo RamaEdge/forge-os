@@ -7,8 +7,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load version information
-if [[ -f "$SCRIPT_DIR/versions.sh" ]]; then
-    source "$SCRIPT_DIR/versions.sh"
+if [[ -f "$PROJECT_ROOT/versions.sh" ]]; then
+    source "$PROJECT_ROOT/versions.sh"
 fi
 
 # Default architecture

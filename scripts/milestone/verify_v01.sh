@@ -79,11 +79,11 @@ verify_project_structure() {
 verify_toolchain() {
     log_section "Toolchain (THE-46)"
     
-    # Check toolchain files
-    if [[ -f "$PROJECT_ROOT/toolchains/versions.mk" ]]; then
-        log_success "Toolchain versions.mk exists"
+    # Check centralized version files
+    if [[ -f "$PROJECT_ROOT/versions.sh" ]]; then
+        log_success "Centralized versions.sh exists"
     else
-        log_failure "Missing toolchains/versions.mk"
+        log_failure "Missing versions.sh"
     fi
     
     if [[ -f "$PROJECT_ROOT/toolchains/env.musl" ]]; then
@@ -305,11 +305,11 @@ verify_networking() {
 verify_packages() {
     log_section "Package System (THE-50)"
     
-    # Check package system
-    if [[ -f "$PROJECT_ROOT/packages/versions.mk" ]]; then
-        log_success "Package versions file exists"
+    # Check centralized version files
+    if [[ -f "$PROJECT_ROOT/versions.sh" ]]; then
+        log_success "Centralized versions.sh exists"
     else
-        log_failure "Missing packages/versions.mk"
+        log_failure "Missing versions.sh"
     fi
     
     # Check package sources
