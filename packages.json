@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "ForgeOS Package Definitions",
+    "last_updated": "2025-10-04"
+  },
+  "packages": {
+    "toolchain": {
+      "binutils": {
+        "version": "2.45",
+        "url": "https://ftp.gnu.org/gnu/binutils/binutils-{version}.tar.xz",
+        "category": "core",
+        "description": "GNU binary utilities"
+      },
+      "gcc": {
+        "version": "15.2.0",
+        "url": "https://ftp.gnu.org/gnu/gcc/gcc-{version}/gcc-{version}.tar.xz",
+        "category": "core",
+        "description": "GNU Compiler Collection"
+      },
+      "musl": {
+        "version": "1.2.5",
+        "url": "https://musl.libc.org/releases/musl-{version}.tar.gz",
+        "category": "libc",
+        "description": "Musl C library"
+      },
+      "glibc": {
+        "version": "2.42",
+        "url": "https://ftp.gnu.org/gnu/glibc/glibc-{version}.tar.xz",
+        "category": "libc",
+        "description": "GNU C library"
+      },
+      "linux-headers": {
+        "version": "6.17",
+        "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-{version}.tar.xz",
+        "category": "headers",
+        "description": "Linux kernel headers"
+      },
+      "musl-cross-make": {
+        "version": "0.9.11",
+        "url": "https://github.com/richfelker/musl-cross-make/archive/v{version}.tar.gz",
+        "category": "build-system",
+        "description": "Musl cross-compilation toolchain"
+      },
+      "crosstool-ng": {
+        "version": "1.28.0",
+        "url": "https://github.com/crosstool-ng/crosstool-ng/releases/download/crosstool-ng-{version}/crosstool-ng-{version}.tar.xz",
+        "category": "build-system",
+        "description": "Cross-compilation toolchain generator"
+      }
+    },
+    "kernel": {
+      "linux": {
+        "version": "6.6.99",
+        "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-{version}.tar.xz",
+        "category": "kernel",
+        "description": "Linux kernel"
+      }
+    },
+    "userland": {
+      "busybox": {
+        "version": "1.37.0",
+        "url": "https://busybox.net/downloads/busybox-{version}.tar.bz2",
+        "category": "base",
+        "description": "BusyBox multi-call binary"
+      }
+    },
+    "package-system": {
+      "apk-tools": {
+        "version": "2.14.0",
+        "url": "https://gitlab.alpinelinux.org/alpine/apk-tools/-/archive/v{version}/apk-tools-v{version}.tar.gz",
+        "category": "package-manager",
+        "description": "Alpine Package Keeper tools"
+      }
+    },
+    "core-system": {
+      "iproute2": {
+        "version": "6.17.0",
+        "url": "https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-{version}.tar.xz",
+        "category": "network",
+        "description": "IP routing utilities"
+      },
+      "chrony": {
+        "version": "4.8",
+        "url": "https://chrony-project.org/releases/chrony-{version}.tar.gz",
+        "category": "time",
+        "description": "NTP client and server"
+      },
+      "dropbear": {
+        "version": "2025.88",
+        "url": "https://matt.ucc.asn.au/dropbear/releases/dropbear-{version}.tar.bz2",
+        "category": "security",
+        "description": "Lightweight SSH server"
+      },
+      "nftables": {
+        "version": "1.0.6.1",
+        "url": "https://netfilter.org/projects/nftables/files/nftables-{version}.tar.xz",
+        "category": "firewall",
+        "description": "Netfilter packet filtering framework"
+      },
+      "ca-certificates": {
+        "version": "20250419",
+        "url": "https://curl.se/ca/cacert.pem",
+        "category": "security",
+        "description": "CA certificates bundle"
+      }
+    }
+  }
+}

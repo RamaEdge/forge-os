@@ -1,0 +1,52 @@
+{
+  "metadata": {
+    "version": "1.0.0",
+    "description": "ForgeOS Build Configuration",
+    "last_updated": "2025-10-04"
+  },
+  "build": {
+    "directories": {
+      "build": "build",
+      "output": "artifacts",
+      "repo": "packages/repo"
+    },
+    "architecture": {
+      "default": "aarch64",
+      "targets": {
+        "musl": "aarch64-linux-musl",
+        "gnu": "aarch64-linux-gnu"
+      }
+    },
+    "repository": {
+      "name": "forgeos",
+      "version": "0.1.0",
+      "arch": "aarch64"
+    },
+    "security": {
+      "signing_key_type": "minisign",
+      "signing_key_dir": "security/keys"
+    },
+    "kernel": {
+      "config": "aarch64_defconfig",
+      "arch": "arm64",
+      "security_features": [
+        "KASLR",
+        "STACKPROTECTOR_STRONG",
+        "SLUB_DEBUG",
+        "HARDENED_USERCOPY",
+        "APPARMOR",
+        "SECCOMP"
+      ]
+    },
+    "busybox": {
+      "config": "busybox_defconfig",
+      "arch": "aarch64",
+      "applets": {
+        "core": ["init", "sh", "mdev", "udhcpc"],
+        "network": ["ifconfig", "ip", "syslogd", "klogd"],
+        "system": ["ps", "mount", "umount", "chmod", "chown"],
+        "utility": ["ls", "cat", "echo", "mkdir", "rmdir"]
+      }
+    }
+  }
+}
