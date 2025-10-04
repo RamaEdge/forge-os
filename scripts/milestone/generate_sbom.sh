@@ -41,7 +41,7 @@ generate_json_sbom() {
     log_info "Generating JSON SBOM..."
     
     # Read versions
-    source "$PROJECT_ROOT/toolchains/versions.sh" 2>/dev/null || true
+    source "$PROJECT_ROOT/versions.sh" 2>/dev/null || true
     
     cat > "$output_file" << EOF
 {
@@ -187,7 +187,7 @@ generate_spdx_sbom() {
     log_info "Generating SPDX SBOM..."
     
     # Read versions
-    source "$PROJECT_ROOT/toolchains/versions.sh" 2>/dev/null || true
+    source "$PROJECT_ROOT/versions.sh" 2>/dev/null || true
     
     cat > "$output_file" << EOF
 SPDXVersion: SPDX-2.3
@@ -272,17 +272,17 @@ Generated: $TIMESTAMP
 
 TOOLCHAIN COMPONENTS:
 
-  binutils $(cat "$PROJECT_ROOT/toolchains/versions.sh" | grep BINUTILS_VERSION= | cut -d'=' -f2 2>/dev/null || echo "2.42")
+  binutils $(cat "$PROJECT_ROOT/versions.sh" | grep BINUTILS_VERSION= | cut -d'=' -f2 2>/dev/null || echo "2.45")
     - GNU Binary Utilities
     - License: GPL-3.0-or-later
     - URL: https://www.gnu.org/software/binutils/
 
-  gcc $(cat "$PROJECT_ROOT/toolchains/versions.sh" | grep GCC_VERSION= | cut -d'=' -f2 2>/dev/null || echo "13.2.0")
+  gcc $(cat "$PROJECT_ROOT/versions.sh" | grep GCC_VERSION= | cut -d'=' -f2 2>/dev/null || echo "15.2.0")
     - GNU Compiler Collection
     - License: GPL-3.0-or-later
     - URL: https://gcc.gnu.org/
 
-  musl $(cat "$PROJECT_ROOT/toolchains/versions.sh" | grep MUSL_VERSION= | cut -d'=' -f2 2>/dev/null || echo "1.2.4")
+  musl $(cat "$PROJECT_ROOT/versions.sh" | grep MUSL_VERSION= | cut -d'=' -f2 2>/dev/null || echo "1.2.5")
     - musl C standard library
     - License: MIT
     - URL: https://musl.libc.org/
@@ -291,7 +291,7 @@ TOOLCHAIN COMPONENTS:
 
 KERNEL:
 
-  Linux $(cat "$PROJECT_ROOT/toolchains/versions.sh" | grep LINUX_VERSION= | cut -d'=' -f2 2>/dev/null || echo "6.6.0")
+  Linux $(cat "$PROJECT_ROOT/versions.sh" | grep LINUX_VERSION= | cut -d'=' -f2 2>/dev/null || echo "6.6.0")
     - Linux kernel with security hardening
     - License: GPL-2.0-only
     - URL: https://kernel.org/
