@@ -41,7 +41,7 @@ generate_json_sbom() {
     log_info "Generating JSON SBOM..."
     
     # Read versions
-    source "$PROJECT_ROOT/versions.sh" 2>/dev/null || true
+    . "$PROJECT_ROOT/versions.sh" 2>/dev/null || true
     
     cat > "$output_file" << EOF
 {
@@ -187,7 +187,7 @@ generate_spdx_sbom() {
     log_info "Generating SPDX SBOM..."
     
     # Read versions
-    source "$PROJECT_ROOT/versions.sh" 2>/dev/null || true
+    . "$PROJECT_ROOT/versions.sh" 2>/dev/null || true
     
     cat > "$output_file" << EOF
 SPDXVersion: SPDX-2.3

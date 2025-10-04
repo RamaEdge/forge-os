@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load centralized versions
-source "$PROJECT_ROOT/scripts/versions.sh"
+. "$PROJECT_ROOT/scripts/versions.sh"
 
 # Parameters
 PACKAGE_NAME="${1:-iproute2}"
