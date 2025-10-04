@@ -90,7 +90,7 @@ parse_urls() {
         
         # Get the version for this package
         local version_var="${package_name}_VERSION"
-        local package_version="${!version_var}"
+        local package_version=$(eval echo \$${version_var})
         
         # Replace {version} placeholder with actual version using sed
         local resolved_url=$(echo "$url_template" | sed "s/{version}/$package_version/g")

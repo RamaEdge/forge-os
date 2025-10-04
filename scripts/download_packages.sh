@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load centralized versions from JSON
-source "$PROJECT_ROOT/scripts/versions.sh"
+. "$PROJECT_ROOT/scripts/versions.sh"
 
 # Download configuration
 DOWNLOADS_DIR="$PROJECT_ROOT/packages/downloads"

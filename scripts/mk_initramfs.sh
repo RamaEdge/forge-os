@@ -28,7 +28,7 @@ mkdir -p "$INITRAMFS_ROOT"
 
 # Load toolchain environment
 if [[ -f "$PROJECT_ROOT/toolchains/env.musl" ]]; then
-    source "$PROJECT_ROOT/toolchains/env.musl"
+    . "$PROJECT_ROOT/toolchains/env.musl"
 else
     echo "Error: Toolchain environment not found. Please run 'make toolchain' first."
     exit 1

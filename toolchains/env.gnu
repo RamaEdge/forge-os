@@ -8,7 +8,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Load version information
 if [[ -f "$PROJECT_ROOT/versions.sh" ]]; then
-    source "$PROJECT_ROOT/versions.sh"
+    . "$PROJECT_ROOT/versions.sh"
 fi
 
 # Default architecture

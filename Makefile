@@ -108,7 +108,7 @@ release: sign
 # Download packages
 download-packages:
 	@echo "Downloading packages..."
-	@source ./scripts/versions.sh && ./scripts/download_packages.sh
+	@bash -c '. ./scripts/versions.sh && ./scripts/download_packages.sh'
 	@echo "Package download complete"
 
 # Clean build artifacts
