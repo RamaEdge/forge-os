@@ -1,8 +1,9 @@
 # ForgeOS iproute2 Package Build Script
 # Alpine-style APKBUILD for iproute2
+# Uses centralized version management
 
 pkgname="iproute2"
-pkgver="6.1.0"
+pkgver="${IPROUTE2_VERSION}"
 pkgrel="0"
 pkgdesc="IP routing utilities"
 url="https://www.kernel.org/pub/linux/utils/net/iproute2/"
@@ -13,7 +14,8 @@ makedepends=""
 checkdepends=""
 subpackages=""
 
-source="https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-${pkgver}.tar.xz"
+# Use local download from centralized package system
+source="file://$(PROJECT_ROOT)/packages/downloads/iproute2-${pkgver}.tar.xz"
 
 build() {
 	cd "$builddir"

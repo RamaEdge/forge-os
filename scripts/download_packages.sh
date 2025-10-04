@@ -9,10 +9,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Load versions and checksums
-source "$PROJECT_ROOT/toolchains/versions.sh"
-source "$PROJECT_ROOT/packages/versions.mk"
-source "$PROJECT_ROOT/packages/checksums.mk"
+# Load centralized versions and checksums
+source "$PROJECT_ROOT/versions.sh"
+source "$PROJECT_ROOT/checksums.sh"
 
 # Download configuration
 DOWNLOADS_DIR="$PROJECT_ROOT/packages/downloads"

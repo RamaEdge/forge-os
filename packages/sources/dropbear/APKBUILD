@@ -1,8 +1,9 @@
 # ForgeOS dropbear Package Build Script
 # Alpine-style APKBUILD for dropbear
+# Uses centralized version management
 
 pkgname="dropbear"
-pkgver="2022.83"
+pkgver="${DROPBEAR_VERSION}"
 pkgrel="0"
 pkgdesc="Lightweight SSH server and client"
 url="https://matt.ucc.asn.au/dropbear/dropbear.html"
@@ -13,7 +14,8 @@ makedepends=""
 checkdepends=""
 subpackages=""
 
-source="https://matt.ucc.asn.au/dropbear/releases/dropbear-${pkgver}.tar.bz2"
+# Use local download from centralized package system
+source="file://$(PROJECT_ROOT)/packages/downloads/dropbear-${pkgver}.tar.bz2"
 
 build() {
 	cd "$builddir"

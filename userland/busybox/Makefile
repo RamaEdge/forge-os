@@ -1,5 +1,5 @@
 # ForgeOS BusyBox Build System
-# Implements THE-48 (Userland Base)
+# Implements THE-48 (Userland Base) + THE-121 (Optimize Package Downloads)
 
 # Configuration
 ARCH ?= aarch64
@@ -8,11 +8,14 @@ OUTPUT_DIR ?= ../artifacts
 SCRIPT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 PROJECT_ROOT := $(abspath $(SCRIPT_DIR)/../..)
 
-# Load version information
-include $(SCRIPT_DIR)/../versions.mk
+# Load centralized version information
+include $(PROJECT_ROOT)/versions.mk
 
-# BusyBox configuration
+# BusyBox configuration (THE-121: Use centralized downloads directly)
 BUSYBOX_SOURCE_DIR := $(BUILD_DIR)/busybox-$(BUSYBOX_VERSION)
+DOWNLOADS_DIR := $(PROJECT_ROOT)/packages/downloads
+BUSYBOX_TAR := $(DOWNLOADS_DIR)/busybox-$(BUSYBOX_VERSION).tar.bz2
+BUSYBOX_EXTRACTED := $(BUILD_DIR)/.busybox-extracted
 BUSYBOX_CONFIG_FILE := $(SCRIPT_DIR)/configs/$(BUSYBOX_CONFIG)
 BUSYBOX_OUTPUT_PATH := $(OUTPUT_DIR)/busybox
 
@@ -28,31 +31,35 @@ JOBS := $(shell nproc 2>/dev/null || echo 4)
 
 all: install
 
-# Download BusyBox source (THE-118: Use local downloads)
-download: $(BUSYBOX_SOURCE_DIR)
-
-$(BUSYBOX_SOURCE_DIR):
-	@echo "Using BusyBox v$(BUSYBOX_VERSION) from local downloads..."
-	@mkdir -p $(BUILD_DIR)
-	@if [[ -f "$(PROJECT_ROOT)/packages/downloads/busybox-$(BUSYBOX_VERSION).tar.bz2" ]]; then \
-		cd $(BUILD_DIR) && tar -xjf "$(PROJECT_ROOT)/packages/downloads/busybox-$(BUSYBOX_VERSION).tar.bz2"; \
-		echo "Extracted BusyBox source to $(BUSYBOX_SOURCE_DIR)"; \
-	else \
-		echo "Error: BusyBox source not found in local downloads"; \
+# Download check (THE-121: Verify local downloads exist)
+download:
+	@if [[ ! -f "$(BUSYBOX_TAR)" ]]; then \
+		echo "Error: BusyBox v$(BUSYBOX_VERSION) not found in local downloads"; \
 		echo "Please run 'make download-packages' first"; \
-		echo "For development, creating placeholder BusyBox build"; \
-		mkdir -p $(BUSYBOX_SOURCE_DIR); \
+		echo "Expected location: $(BUSYBOX_TAR)"; \
+		exit 1; \
 	fi
+	@echo "Using BusyBox v$(BUSYBOX_VERSION) from local downloads ✓"
+
+# Extract and configure (THE-121: Direct extraction from downloads)
+configure: download $(BUSYBOX_EXTRACTED)
+
+$(BUSYBOX_EXTRACTED):
+	@echo "Extracting BusyBox source from $(BUSYBOX_TAR)..."
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && tar -xjf "$(BUSYBOX_TAR)"
+	@touch $(BUSYBOX_EXTRACTED)
+	@echo "BusyBox source extracted to $(BUSYBOX_SOURCE_DIR)"
 
 # Configure BusyBox
-configure: download
+configure-busybox: $(BUSYBOX_EXTRACTED)
 	@echo "Configuring BusyBox with $(BUSYBOX_CONFIG)..."
 	@mkdir -p $(BUSYBOX_SOURCE_DIR)
 	@cp $(BUSYBOX_CONFIG_FILE) $(BUSYBOX_SOURCE_DIR)/.config
 	@echo "Configuration complete (placeholder)"
 
 # Build BusyBox
-build: configure
+build: configure configure-busybox
 	@echo "Building BusyBox for $(ARCH)..."
 	@mkdir -p $(BUSYBOX_SOURCE_DIR)/_install/bin
 	@echo "BusyBox build complete (placeholder)"
@@ -78,12 +85,12 @@ check: install
 	fi
 	@echo "BusyBox verification complete"
 
-# Clean build artifacts
+# Clean build artifacts (THE-121: Preserves downloads)
 clean:
 	@echo "Cleaning BusyBox build..."
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(BUSYBOX_OUTPUT_PATH)
-	@echo "Clean complete"
+	@echo "Clean complete (downloads preserved in $(DOWNLOADS_DIR))"
 
 # Show configuration
 config:
@@ -93,5 +100,7 @@ config:
 	@echo "  Config: $(BUSYBOX_CONFIG)"
 	@echo "  Build directory: $(BUILD_DIR)"
 	@echo "  Output directory: $(BUSYBOX_OUTPUT_PATH)"
+	@echo "  Downloads directory: $(DOWNLOADS_DIR)"
 	@echo "  Jobs: $(JOBS)"
 	@echo "  Cross-compile: $(CROSS_COMPILE)"
+	@echo "  Tarball: $(BUSYBOX_TAR)"

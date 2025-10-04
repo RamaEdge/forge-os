@@ -1,0 +1,22 @@
+# ForgeOS Base Packages (prod / immutable)
+
+# Core userland
+busybox-static
+musl
+ca-certificates
+
+# Networking & time
+iproute2
+nftables
+chrony
+
+# Storage & filesystems
+e2fsprogs
+util-linux
+dosfstools
+
+# Security & hardening
+openssl
+apparmor
+apparmor-utils
+doas
