@@ -1,5 +1,5 @@
 # musl-cross-make toolchain build for ForgeOS
-# Implements THE-46 (Toolchains)
+# Implements THE-46 (Toolchains) + THE-121 (Optimize Package Downloads)
 
 # Configuration
 ARCH ?= aarch64
@@ -8,13 +8,14 @@ OUTPUT_DIR ?= ../output
 SCRIPT_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 PROJECT_ROOT := $(abspath $(SCRIPT_DIR)/../..)
 
-# Load version information
-include $(SCRIPT_DIR)/../versions.mk
+# Load centralized version information
+include $(PROJECT_ROOT)/versions.mk
 
-# musl-cross-make configuration
+# musl-cross-make configuration (THE-121: Use centralized downloads directly)
 MUSL_CROSS_MAKE_DIR := $(BUILD_DIR)/musl-cross-make
-MUSL_CROSS_MAKE_URL := https://github.com/richfelker/musl-cross-make/archive/v$(MUSL_CROSS_MAKE_VERSION).tar.gz
-MUSL_CROSS_MAKE_TAR := $(BUILD_DIR)/musl-cross-make-$(MUSL_CROSS_MAKE_VERSION).tar.gz
+DOWNLOADS_DIR := $(PROJECT_ROOT)/packages/downloads
+MUSL_CROSS_MAKE_TAR := $(DOWNLOADS_DIR)/v$(MUSL_CROSS_MAKE_VERSION).tar.gz
+MUSL_CROSS_MAKE_EXTRACTED := $(BUILD_DIR)/.musl-cross-make-extracted
 
 # Target configuration
 TARGET := $(ARCH)-linux-musl
@@ -27,25 +28,23 @@ JOBS := $(shell nproc 2>/dev/null || echo 4)
 
 all: install
 
-# Download musl-cross-make (THE-118: Use local downloads)
-download: $(MUSL_CROSS_MAKE_TAR)
-
-$(MUSL_CROSS_MAKE_TAR):
-	@echo "Using musl-cross-make v$(MUSL_CROSS_MAKE_VERSION) from local downloads..."
-	@mkdir -p $(BUILD_DIR)
-	@if [[ -f "$(PROJECT_ROOT)/packages/downloads/v$(MUSL_CROSS_MAKE_VERSION).tar.gz" ]]; then \
-		cp "$(PROJECT_ROOT)/packages/downloads/v$(MUSL_CROSS_MAKE_VERSION).tar.gz" "$@"; \
-		echo "Copied from local downloads: $@"; \
-	else \
-		echo "Error: Package not found in local downloads"; \
+# Download check (THE-121: Verify local downloads exist)
+download:
+	@if [[ ! -f "$(MUSL_CROSS_MAKE_TAR)" ]]; then \
+		echo "Error: musl-cross-make v$(MUSL_CROSS_MAKE_VERSION) not found in local downloads"; \
 		echo "Please run 'make download-packages' first"; \
+		echo "Expected location: $(MUSL_CROSS_MAKE_TAR)"; \
 		exit 1; \
 	fi
+	@echo "Using musl-cross-make v$(MUSL_CROSS_MAKE_VERSION) from local downloads ✓"
 
-# Extract and configure
-configure: download
-	@echo "Extracting and configuring musl-cross-make..."
-	@cd $(BUILD_DIR) && tar -xzf $(notdir $(MUSL_CROSS_MAKE_TAR))
+# Extract and configure (THE-121: Direct extraction from downloads)
+configure: download $(MUSL_CROSS_MAKE_EXTRACTED)
+
+$(MUSL_CROSS_MAKE_EXTRACTED):
+	@echo "Extracting musl-cross-make from $(MUSL_CROSS_MAKE_TAR)..."
+	@mkdir -p $(BUILD_DIR)
+	@cd $(BUILD_DIR) && tar -xzf "$(MUSL_CROSS_MAKE_TAR)"
 	@cd $(BUILD_DIR) && rm -rf musl-cross-make && mv musl-cross-make-$(MUSL_CROSS_MAKE_VERSION) musl-cross-make
 	@cd $(MUSL_CROSS_MAKE_DIR) && \
 		echo "TARGET = $(TARGET)" > config.mak && \
@@ -65,6 +64,7 @@ configure: download
 		echo "GCC_CONFIG += --disable-libstdcxx-pch" >> config.mak && \
 		echo "MUSL_CONFIG += --enable-debug" >> config.mak && \
 		echo "MUSL_CONFIG += --enable-optimize" >> config.mak
+	@touch $(MUSL_CROSS_MAKE_EXTRACTED)
 	@echo "Configuration complete"
 
 # Build toolchain
@@ -87,12 +87,12 @@ check: install
 	@$(TOOLCHAIN_OUTPUT)/bin/$(TARGET)-gcc -print-sysroot
 	@echo "Toolchain verification complete"
 
-# Clean build artifacts
+# Clean build artifacts (THE-121: Preserves downloads)
 clean:
 	@echo "Cleaning musl toolchain build..."
 	@rm -rf $(BUILD_DIR)
 	@rm -rf $(TOOLCHAIN_OUTPUT)
-	@echo "Clean complete"
+	@echo "Clean complete (downloads preserved in $(DOWNLOADS_DIR))"
 
 # Show configuration
 config:
@@ -100,5 +100,7 @@ config:
 	@echo "  Target: $(TARGET)"
 	@echo "  Build directory: $(BUILD_DIR)"
 	@echo "  Output directory: $(TOOLCHAIN_OUTPUT)"
+	@echo "  Downloads directory: $(DOWNLOADS_DIR)"
 	@echo "  Jobs: $(JOBS)"
 	@echo "  musl-cross-make version: $(MUSL_CROSS_MAKE_VERSION)"
+	@echo "  Tarball: $(MUSL_CROSS_MAKE_TAR)"

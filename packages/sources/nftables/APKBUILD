@@ -1,8 +1,9 @@
 # ForgeOS nftables Package Build Script
 # Alpine-style APKBUILD for nftables
+# Uses centralized version management
 
 pkgname="nftables"
-pkgver="1.0.7"
+pkgver="${NFTABLES_VERSION}"
 pkgrel="0"
 pkgdesc="Netfilter packet filtering framework"
 url="https://netfilter.org/projects/nftables/"
@@ -13,7 +14,8 @@ makedepends=""
 checkdepends=""
 subpackages=""
 
-source="https://netfilter.org/projects/nftables/files/nftables-${pkgver}.tar.bz2"
+# Use local download from centralized package system
+source="file://$(PROJECT_ROOT)/packages/downloads/nftables-${pkgver}.tar.bz2"
 
 build() {
 	cd "$builddir"

@@ -2,10 +2,10 @@
 # Pinned versions for reproducible builds
 
 # BusyBox version
-BUSYBOX_VERSION := 1.36.1
+BUSYBOX_VERSION := 1.37.0
 BUSYBOX_VERSION_MAJOR := 1
-BUSYBOX_VERSION_MINOR := 36
-BUSYBOX_VERSION_PATCH := 1
+BUSYBOX_VERSION_MINOR := 37
+BUSYBOX_VERSION_PATCH := 0
 
 # Build configuration
 USERLAND_BUILD_DIR := build

@@ -1,8 +1,9 @@
 # ForgeOS ca-certificates Package Build Script
 # Alpine-style APKBUILD for ca-certificates
+# Uses centralized version management
 
 pkgname="ca-certificates"
-pkgver="20230311"
+pkgver="${CA_CERTIFICATES_VERSION}"
 pkgrel="0"
 pkgdesc="Common CA certificates"
 url="https://www.mozilla.org/en-US/about/governance/policies/security-group/certs/"
@@ -13,7 +14,8 @@ makedepends=""
 checkdepends=""
 subpackages=""
 
-source="https://curl.se/ca/cacert-${pkgver}.pem"
+# Use local download from centralized package system
+source="file://$(PROJECT_ROOT)/packages/downloads/cacert-${pkgver}.pem"
 
 build() {
 	cd "$builddir"

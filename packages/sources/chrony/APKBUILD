@@ -1,8 +1,9 @@
 # ForgeOS chrony Package Build Script
 # Alpine-style APKBUILD for chrony
+# Uses centralized version management
 
 pkgname="chrony"
-pkgver="4.3"
+pkgver="${CHRONY_VERSION}"
 pkgrel="0"
 pkgdesc="Lightweight NTP client and server"
 url="https://chrony.tuxfamily.org/"
@@ -13,7 +14,8 @@ makedepends=""
 checkdepends=""
 subpackages=""
 
-source="https://download.tuxfamily.org/chrony/chrony-${pkgver}.tar.gz"
+# Use local download from centralized package system
+source="file://$(PROJECT_ROOT)/packages/downloads/chrony-${pkgver}.tar.gz"
 
 build() {
 	cd "$builddir"
