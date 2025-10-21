@@ -29,7 +29,7 @@
 
 ```mermaid
 graph TD
-    subgraph Host[Build Host (macOS aarch64)]
+    subgraph Host["Build Host (macOS aarch64)"]
       T1[Cross Toolchains<br/>aarch64-linux-musl- / -gnu-]
       B1[Build Orchestrator<br/>Make + scripts]
       A1[Artifact Signer<br/>cosign / minisign]
@@ -39,7 +39,7 @@ graph TD
       K[Linux Kernel<br/>defconfig + patches]
       U[Userland Base<br/>musl + BusyBox]
       I[Init Layer<br/>busybox-init OR openrc OR systemd]
-      P[Package System<br/>apk (default) / pacman / none]
+      P["Package System<br/>apk (default) / pacman / none"]
       S[Security Baseline<br/>AppArmor, seccomp, hardening]
       N[Net Stack<br/>iproute2, udhcpc/dhcpcd, nftables]
       DM[Device Mgmt<br/>dropbear/openssh, simple agent]

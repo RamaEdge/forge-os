@@ -3,8 +3,10 @@
 
 # Build directories
 build/
-artifacts/
 output/
+
+# Artifacts directory (ignore all build outputs)
+artifacts/
 
 # Toolchain builds
 toolchains/output/
@@ -63,3 +65,4 @@ userland/packages/output/
 # Legacy directories
 pkg/
 src/
+musl/

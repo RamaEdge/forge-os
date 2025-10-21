@@ -13,8 +13,11 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Parameters
 ARCH="${1:-aarch64}"
-BUILD_DIR="${2:-build/kernel}"
+TOOLCHAIN="${2:-musl}"
 ARTIFACTS_DIR="${3:-artifacts}"
+
+# Build directory based on toolchain
+BUILD_DIR="build/kernel-${TOOLCHAIN}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -45,11 +48,22 @@ KERNEL_OUTPUT="$ARTIFACTS_DIR/kernel/$ARCH"
 
 # Cross-compilation settings
 if [[ "$ARCH" == "aarch64" ]]; then
-    CROSS_COMPILE="aarch64-linux-musl-"
+    CROSS_COMPILE="aarch64-linux-${TOOLCHAIN}-"
     KERNEL_ARCH="arm64"
 else
-    CROSS_COMPILE="${ARCH}-linux-musl-"
+    CROSS_COMPILE="${ARCH}-linux-${TOOLCHAIN}-"
     KERNEL_ARCH="$ARCH"
+fi
+
+# Set up toolchain PATH
+TOOLCHAIN_DIR="$ARTIFACTS_DIR/toolchain/$ARCH-$TOOLCHAIN/bin"
+if [[ -d "$TOOLCHAIN_DIR" ]]; then
+    export PATH="$TOOLCHAIN_DIR:$PATH"
+    log_info "Added toolchain to PATH: $TOOLCHAIN_DIR"
+else
+    log_error "Toolchain directory not found: $TOOLCHAIN_DIR"
+    log_info "Please run 'make toolchain' first"
+    exit 1
 fi
 
 log_info "Building Linux kernel for $ARCH"
@@ -76,29 +90,35 @@ if [[ -f "$KERNEL_OUTPUT/Image" ]]; then
     exit 0
 fi
 
-# Extract kernel source
-log_info "Extracting kernel source..."
-cd "$BUILD_DIR"
-tar -xf "$kernel_tar"
-mv "linux-${LINUX_VERSION}" linux
-
-# Set up environment
+# Set up environment BEFORE extracting kernel source
 export ARCH="$KERNEL_ARCH"
 export CROSS_COMPILE="$CROSS_COMPILE"
+export CC="${CROSS_COMPILE}gcc"
+export CXX="${CROSS_COMPILE}g++"
 export INSTALL_PATH="$KERNEL_OUTPUT"
 export INSTALL_MOD_PATH="$KERNEL_OUTPUT"
 
+# Ensure PATH includes toolchain
+export PATH="$TOOLCHAIN_DIR:$PATH"
+
+# Extract kernel source
+log_info "Extracting kernel source..."
+tar -xf "$kernel_tar" -C "$BUILD_DIR"
+mv "$BUILD_DIR/linux-${LINUX_VERSION}" "$BUILD_DIR/linux"
+
 # Configure kernel
 log_info "Configuring kernel..."
-cd linux
+kernel_dir="$BUILD_DIR/linux"
 
 # Use our hardened config if available
 if [[ -f "$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig" ]]; then
     log_info "Using hardened config: ${ARCH}_defconfig"
-    cp "$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig" .config
+    cp "$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig" "$kernel_dir/.config"
 else
     log_info "Using default config for $ARCH"
-    gmake defconfig
+    pushd "$kernel_dir"
+    env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake defconfig
+    popd
 fi
 
 # Apply any patches
@@ -107,23 +127,30 @@ if [[ -d "$PROJECT_ROOT/kernel/patches" ]]; then
     for patch in "$PROJECT_ROOT/kernel/patches"/*.patch; do
         if [[ -f "$patch" ]]; then
             log_info "Applying patch: $(basename "$patch")"
-            patch -p1 < "$patch"
+            pushd "$kernel_dir"
+            if ! patch -p1 < "$patch"; then
+                log_warning "Patch $(basename "$patch") failed to apply - continuing without it"
+                log_info "This may be due to kernel version incompatibility"
+            fi
+            popd
         fi
     done
 fi
 
 # Build kernel
 log_info "Building kernel (this may take a while)..."
-gmake -j$(nproc 2>/dev/null || echo 4)
+pushd "$kernel_dir"
+env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake -j$(nproc 2>/dev/null || echo 4)
 
 # Install kernel
 log_info "Installing kernel..."
-gmake install
-gmake modules_install
+env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake INSTALL_PATH="$KERNEL_OUTPUT" install
+env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake INSTALL_MOD_PATH="$KERNEL_OUTPUT" modules_install
+popd
 
 # Copy kernel image to output
-if [[ -f "arch/$KERNEL_ARCH/boot/Image" ]]; then
-    cp "arch/$KERNEL_ARCH/boot/Image" "$KERNEL_OUTPUT/"
+if [[ -f "$kernel_dir/arch/$KERNEL_ARCH/boot/Image" ]]; then
+    cp "$kernel_dir/arch/$KERNEL_ARCH/boot/Image" "$KERNEL_OUTPUT/"
     log_success "Kernel image copied to $KERNEL_OUTPUT/Image"
 else
     log_error "Kernel image not found after build"
@@ -131,8 +158,8 @@ else
 fi
 
 # Copy config
-if [[ -f ".config" ]]; then
-    cp ".config" "$KERNEL_OUTPUT/config"
+if [[ -f "$kernel_dir/.config" ]]; then
+    cp "$kernel_dir/.config" "$KERNEL_OUTPUT/config"
     log_success "Kernel config copied to $KERNEL_OUTPUT/config"
 fi
 

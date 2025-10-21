@@ -91,53 +91,59 @@ build_musl_toolchain() {
     # Create build directories
     local build_root="$BUILD_DIR/musl-toolchain"
     mkdir -p "$build_root"
-    cd "$build_root"
     
     # Extract packages
     log_info "Extracting toolchain packages..."
-    tar -xf "$binutils_tar"
-    tar -xf "$gcc_tar"
-    tar -xf "$musl_tar"
-    tar -xf "$linux_tar"
+    tar -xf "$binutils_tar" -C "$build_root" || { log_error "Failed to extract binutils"; exit 1; }
+    tar -xf "$gcc_tar" -C "$build_root" || { log_error "Failed to extract GCC"; exit 1; }
+    tar -xf "$musl_tar" -C "$build_root" || { log_error "Failed to extract musl"; exit 1; }
+    tar -xf "$linux_tar" -C "$build_root" || { log_error "Failed to extract Linux headers"; exit 1; }
     
     # Set up environment
     export PATH="$TOOLCHAIN_OUTPUT/bin:$PATH"
     export PREFIX="$TOOLCHAIN_OUTPUT"
+    export DESTDIR=""
+    export INSTALL_PREFIX="$TOOLCHAIN_OUTPUT"
+    
+    # Create target directories to prevent system directory creation
+    mkdir -p "$TOOLCHAIN_OUTPUT/share/info"
+    mkdir -p "$TOOLCHAIN_OUTPUT/share/man"
+    mkdir -p "$TOOLCHAIN_OUTPUT/share"
+    
+    # Get absolute paths
+    local toolchain_output_abs="$(cd "$TOOLCHAIN_OUTPUT" && pwd)"
+    local toolchain_target_abs="$toolchain_output_abs/$TARGET"
     
     # Build binutils first
     log_info "Building binutils..."
-    cd "binutils-${BINUTILS_VERSION}"
-    mkdir -p build
-    cd build
-    ../configure \
+    local binutils_dir="$build_root/binutils-${BINUTILS_VERSION}"
+    local binutils_build_dir="$binutils_dir/build"
+    mkdir -p "$binutils_build_dir"
+    
+    pushd "$binutils_build_dir"
+    "$binutils_dir/configure" \
         --target="$TARGET" \
-        --prefix="$(realpath "$TOOLCHAIN_OUTPUT")" \
+        --prefix="$toolchain_output_abs" \
         --disable-nls \
         --disable-werror \
-        --disable-multilib
-gmake -j$(nproc 2>/dev/null || echo 4)
-gmake install
-    cd ../..
-    
-    # Build musl
-    log_info "Building musl..."
-    cd "musl-${MUSL_VERSION}"
-    ./configure \
-        --target="$TARGET" \
-        --prefix="$(realpath "$TOOLCHAIN_OUTPUT")/$TARGET" \
-        --disable-shared
-gmake -j$(nproc 2>/dev/null || echo 4)
-gmake install
-    cd ..
+        --disable-multilib \
+        --infodir="$toolchain_output_abs/share/info" \
+        --mandir="$toolchain_output_abs/share/man" \
+        --datadir="$toolchain_output_abs/share"
+    gmake -j$(nproc 2>/dev/null || echo 4)
+    gmake DESTDIR="" install
+    popd
     
     # Build GCC (stage 1 - bootstrap)
     log_info "Building GCC (stage 1)..."
-    cd "gcc-${GCC_VERSION}"
-    mkdir -p build
-    cd build
-    ../configure \
+    local gcc_dir="$build_root/gcc-${GCC_VERSION}"
+    local gcc_build_dir="$gcc_dir/build"
+    mkdir -p "$gcc_build_dir"
+    
+    pushd "$gcc_build_dir"
+    "$gcc_dir/configure" \
         --target="$TARGET" \
-        --prefix="$(realpath "$TOOLCHAIN_OUTPUT")" \
+        --prefix="$toolchain_output_abs" \
         --enable-languages=c \
         --disable-libssp \
         --disable-libgomp \
@@ -146,14 +152,37 @@ gmake install
         --disable-libatomic \
         --disable-libquadmath \
         --disable-multilib \
-        --with-sysroot="$(realpath "$TOOLCHAIN_OUTPUT")/$TARGET" \
+        --with-sysroot="$toolchain_target_abs" \
         --with-newlib \
         --disable-shared \
         --disable-threads \
-        --disable-libstdcxx-pch
+        --disable-libstdcxx-pch \
+        --infodir="$toolchain_output_abs/share/info" \
+        --mandir="$toolchain_output_abs/share/man" \
+        --datadir="$toolchain_output_abs/share"
     make -j$(nproc 2>/dev/null || echo 4) all-gcc
-    gmake install-gcc
-    cd ../..
+    gmake DESTDIR="" install-gcc
+    popd
+    
+    # Build musl
+    log_info "Building musl..."
+    local musl_dir="$build_root/musl-${MUSL_VERSION}"
+    
+    pushd "$musl_dir"
+    # Set up cross-compilation environment
+    export PATH="$TOOLCHAIN_OUTPUT/bin:$PATH"
+    export CC="$CROSS_COMPILE"gcc
+    export CROSS_COMPILE="$CROSS_COMPILE"
+    ./configure \
+        --prefix="$toolchain_target_abs" \
+        --disable-shared \
+        --infodir="$toolchain_output_abs/share/info" \
+        --mandir="$toolchain_output_abs/share/man" \
+        --datadir="$toolchain_output_abs/share" \
+        "$TARGET"
+    gmake -j$(nproc 2>/dev/null || echo 4)
+    gmake DESTDIR="" install
+    popd
     
     log_success "musl toolchain built successfully"
 }
@@ -179,55 +208,78 @@ build_glibc_toolchain() {
     # Create build directories
     local build_root="$BUILD_DIR/glibc-toolchain"
     mkdir -p "$build_root"
-    cd "$build_root"
     
     # Extract packages
     log_info "Extracting toolchain packages..."
-    tar -xf "$binutils_tar"
-    tar -xf "$gcc_tar"
-    tar -xf "$glibc_tar"
-    tar -xf "$linux_tar"
+    tar -xf "$binutils_tar" -C "$build_root" || { log_error "Failed to extract binutils"; exit 1; }
+    tar -xf "$gcc_tar" -C "$build_root" || { log_error "Failed to extract GCC"; exit 1; }
+    tar -xf "$glibc_tar" -C "$build_root" || { log_error "Failed to extract glibc"; exit 1; }
+    tar -xf "$linux_tar" -C "$build_root" || { log_error "Failed to extract Linux headers"; exit 1; }
     
     # Set up environment
     export PATH="$TOOLCHAIN_OUTPUT/bin:$PATH"
     export PREFIX="$TOOLCHAIN_OUTPUT"
+    export DESTDIR=""
+    export INSTALL_PREFIX="$TOOLCHAIN_OUTPUT"
+    
+    # Create target directories to prevent system directory creation
+    mkdir -p "$TOOLCHAIN_OUTPUT/share/info"
+    mkdir -p "$TOOLCHAIN_OUTPUT/share/man"
+    mkdir -p "$TOOLCHAIN_OUTPUT/share"
+    
+    # Get absolute paths
+    local toolchain_output_abs="$(cd "$TOOLCHAIN_OUTPUT" && pwd)"
+    local toolchain_target_abs="$toolchain_output_abs/$TARGET"
+    local linux_headers_abs="$(cd "$build_root/linux-${LINUX_VERSION}/include" && pwd)"
     
     # Build binutils first
     log_info "Building binutils..."
-    cd "binutils-${BINUTILS_VERSION}"
-    mkdir -p build
-    cd build
-    ../configure \
+    local binutils_dir="$build_root/binutils-${BINUTILS_VERSION}"
+    local binutils_build_dir="$binutils_dir/build"
+    mkdir -p "$binutils_build_dir"
+    
+    pushd "$binutils_build_dir"
+    "$binutils_dir/configure" \
         --target="$TARGET" \
-        --prefix="$(realpath "$TOOLCHAIN_OUTPUT")" \
+        --prefix="$toolchain_output_abs" \
         --disable-nls \
         --disable-werror \
-        --disable-multilib
-gmake -j$(nproc 2>/dev/null || echo 4)
-gmake install
-    cd ../..
+        --disable-multilib \
+        --infodir="$toolchain_output_abs/share/info" \
+        --mandir="$toolchain_output_abs/share/man" \
+        --datadir="$toolchain_output_abs/share"
+    gmake -j$(nproc 2>/dev/null || echo 4)
+    gmake DESTDIR="" install
+    popd
     
     # Build glibc headers
     log_info "Building glibc headers..."
-    cd "glibc-${GLIBC_VERSION}"
-    mkdir -p build
-    cd build
-    ../configure \
+    local glibc_dir="$build_root/glibc-${GLIBC_VERSION}"
+    local glibc_build_dir="$glibc_dir/build"
+    mkdir -p "$glibc_build_dir"
+    
+    pushd "$glibc_build_dir"
+    "$glibc_dir/configure" \
         --target="$TARGET" \
-        --prefix="$(realpath "$TOOLCHAIN_OUTPUT")/$TARGET" \
-        --with-headers="$(realpath ../../linux-${LINUX_VERSION}/include)" \
-        --disable-multilib
-    gmake install-headers
-    cd ../..
+        --prefix="$toolchain_target_abs" \
+        --with-headers="$linux_headers_abs" \
+        --disable-multilib \
+        --infodir="$toolchain_output_abs/share/info" \
+        --mandir="$toolchain_output_abs/share/man" \
+        --datadir="$toolchain_output_abs/share"
+    gmake DESTDIR="" install-headers
+    popd
     
     # Build GCC (stage 1 - bootstrap)
     log_info "Building GCC (stage 1)..."
-    cd "gcc-${GCC_VERSION}"
-    mkdir -p build
-    cd build
-    ../configure \
+    local gcc_dir="$build_root/gcc-${GCC_VERSION}"
+    local gcc_build_dir="$gcc_dir/build"
+    mkdir -p "$gcc_build_dir"
+    
+    pushd "$gcc_build_dir"
+    "$gcc_dir/configure" \
         --target="$TARGET" \
-        --prefix="$(realpath "$TOOLCHAIN_OUTPUT")" \
+        --prefix="$toolchain_output_abs" \
         --enable-languages=c \
         --disable-libssp \
         --disable-libgomp \
@@ -236,14 +288,17 @@ gmake install
         --disable-libatomic \
         --disable-libquadmath \
         --disable-multilib \
-        --with-sysroot="$(realpath "$TOOLCHAIN_OUTPUT")/$TARGET" \
+        --with-sysroot="$toolchain_target_abs" \
         --with-newlib \
         --disable-shared \
         --disable-threads \
-        --disable-libstdcxx-pch
+        --disable-libstdcxx-pch \
+        --infodir="$toolchain_output_abs/share/info" \
+        --mandir="$toolchain_output_abs/share/man" \
+        --datadir="$toolchain_output_abs/share"
     make -j$(nproc 2>/dev/null || echo 4) all-gcc
-    gmake install-gcc
-    cd ../..
+    gmake DESTDIR="" install-gcc
+    popd
     
     log_success "glibc toolchain built successfully"
 }
