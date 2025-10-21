@@ -51,6 +51,17 @@ else
     CROSS_COMPILE="${ARCH}-linux-musl-"
 fi
 
+# Set up toolchain PATH
+TOOLCHAIN_DIR="$ARTIFACTS_DIR/toolchain/$ARCH-musl/bin"
+if [[ -d "$TOOLCHAIN_DIR" ]]; then
+    export PATH="$TOOLCHAIN_DIR:$PATH"
+    log_info "Added toolchain to PATH: $TOOLCHAIN_DIR"
+else
+    log_error "Toolchain directory not found: $TOOLCHAIN_DIR"
+    log_info "Please run 'make toolchain' first"
+    exit 1
+fi
+
 log_info "Building APK package: $PACKAGE_NAME for $ARCH"
 log_info "Build directory: $BUILD_DIR"
 log_info "Output directory: $PACKAGE_OUTPUT"
@@ -112,13 +123,11 @@ if [[ -n "$PACKAGE_TARBALL" && -f "$PACKAGE_TARBALL" ]]; then
     
     # Extract source
     log_info "Extracting package source..."
-    cd "$PACKAGE_BUILD_DIR"
-    tar -xf "$PACKAGE_TARBALL"
+    tar -xf "$PACKAGE_TARBALL" -C "$PACKAGE_BUILD_DIR"
     
     # Find extracted directory
-    EXTRACTED_DIR=$(find . -maxdepth 1 -type d -name "${PACKAGE_NAME}-*" | head -1)
+    EXTRACTED_DIR=$(find "$PACKAGE_BUILD_DIR" -maxdepth 1 -type d -name "${PACKAGE_NAME}-*" | head -1)
     if [[ -n "$EXTRACTED_DIR" ]]; then
-        cd "$EXTRACTED_DIR"
         log_info "Building in directory: $EXTRACTED_DIR"
         
         # Set up environment
@@ -131,6 +140,7 @@ if [[ -n "$PACKAGE_TARBALL" && -f "$PACKAGE_TARBALL" ]]; then
         
         # Configure and build
         log_info "Configuring package..."
+        pushd "$EXTRACTED_DIR"
         if [[ -f "configure" ]]; then
             ./configure --host="$ARCH-linux-musl" --prefix="/usr"
         elif [[ -f "configure.ac" ]]; then
@@ -143,6 +153,7 @@ if [[ -n "$PACKAGE_TARBALL" && -f "$PACKAGE_TARBALL" ]]; then
         
         log_info "Installing package..."
         gmake DESTDIR="$PACKAGE_BUILD_DIR/install" install
+        popd
         
         log_success "Package built from source successfully"
     else
@@ -175,8 +186,9 @@ APK_FILE="$PACKAGE_OUTPUT/${PACKAGE_NAME}-${PACKAGE_VERSION}-r0.apk"
 log_info "Creating APK: $APK_FILE"
 
 # For now, create a tar.gz as APK placeholder
-cd "$PACKAGE_BUILD_DIR"
+pushd "$PACKAGE_BUILD_DIR"
 tar -czf "$APK_FILE" .PKGINFO install/ 2>/dev/null || tar -czf "$APK_FILE" .PKGINFO
+popd
 
 log_success "Package $PACKAGE_NAME built successfully"
 log_info "APK file: $APK_FILE"

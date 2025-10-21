@@ -50,6 +50,17 @@ else
     CROSS_COMPILE="${ARCH}-linux-musl-"
 fi
 
+# Set up toolchain PATH
+TOOLCHAIN_DIR="$ARTIFACTS_DIR/toolchain/$ARCH-musl/bin"
+if [[ -d "$TOOLCHAIN_DIR" ]]; then
+    export PATH="$TOOLCHAIN_DIR:$PATH"
+    log_info "Added toolchain to PATH: $TOOLCHAIN_DIR"
+else
+    log_error "Toolchain directory not found: $TOOLCHAIN_DIR"
+    log_info "Please run 'make toolchain' first"
+    exit 1
+fi
+
 log_info "Building BusyBox for $ARCH"
 log_info "Build directory: $BUILD_DIR"
 log_info "Output directory: $BUSYBOX_OUTPUT"
@@ -76,9 +87,8 @@ fi
 
 # Extract BusyBox source
 log_info "Extracting BusyBox source..."
-cd "$BUILD_DIR"
-tar -xf "$busybox_tar"
-mv "busybox-${BUSYBOX_VERSION}" busybox
+tar -xf "$busybox_tar" -C "$BUILD_DIR"
+mv "$BUILD_DIR/busybox-${BUSYBOX_VERSION}" "$BUILD_DIR/busybox"
 
 # Set up environment
 export ARCH="$ARCH"
@@ -86,15 +96,17 @@ export CROSS_COMPILE="$CROSS_COMPILE"
 
 # Configure BusyBox
 log_info "Configuring BusyBox..."
-cd busybox
+busybox_dir="$BUILD_DIR/busybox"
 
 # Use our config if available
 if [[ -f "$PROJECT_ROOT/userland/busybox/configs/busybox_defconfig" ]]; then
     log_info "Using ForgeOS config: busybox_defconfig"
-    cp "$PROJECT_ROOT/userland/busybox/configs/busybox_defconfig" .config
+    cp "$PROJECT_ROOT/userland/busybox/configs/busybox_defconfig" "$busybox_dir/.config"
 else
     log_info "Using default config"
-    gmake defconfig
+    pushd "$busybox_dir"
+    PATH="$TOOLCHAIN_DIR:$PATH" gmake defconfig
+    popd
 fi
 
 # Apply any patches
@@ -103,22 +115,26 @@ if [[ -d "$PROJECT_ROOT/userland/busybox/patches" ]]; then
     for patch in "$PROJECT_ROOT/userland/busybox/patches"/*.patch; do
         if [[ -f "$patch" ]]; then
             log_info "Applying patch: $(basename "$patch")"
+            pushd "$busybox_dir"
             patch -p1 < "$patch"
+            popd
         fi
     done
 fi
 
 # Build BusyBox
 log_info "Building BusyBox (this may take a while)..."
-gmake -j$(nproc 2>/dev/null || echo 4)
+pushd "$busybox_dir"
+PATH="$TOOLCHAIN_DIR:$PATH" gmake -j$(nproc 2>/dev/null || echo 4)
 
 # Install BusyBox
 log_info "Installing BusyBox..."
-gmake install
+PATH="$TOOLCHAIN_DIR:$PATH" gmake DESTDIR="" install
+popd
 
 # Copy BusyBox binary to output
-if [[ -f "busybox" ]]; then
-    cp "busybox" "$BUSYBOX_OUTPUT/"
+if [[ -f "$busybox_dir/busybox" ]]; then
+    cp "$busybox_dir/busybox" "$BUSYBOX_OUTPUT/"
     log_success "BusyBox binary copied to $BUSYBOX_OUTPUT/busybox"
 else
     log_error "BusyBox binary not found after build"
@@ -126,8 +142,8 @@ else
 fi
 
 # Copy config
-if [[ -f ".config" ]]; then
-    cp ".config" "$BUSYBOX_OUTPUT/config"
+if [[ -f "$busybox_dir/.config" ]]; then
+    cp "$busybox_dir/.config" "$BUSYBOX_OUTPUT/config"
     log_success "BusyBox config copied to $BUSYBOX_OUTPUT/config"
 fi
 
