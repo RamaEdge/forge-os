@@ -1,26 +1,21 @@
 # ForgeOS Build Artifacts
 # ======================
 
-# Build directories
+# Build directories (temporary compilation only)
 build/
 output/
 
-# Artifacts directory (ignore all build outputs)
+# Artifacts directory (ignore build outputs, but keep structure)
 artifacts/
+!artifacts/.gitkeep
 
-# Toolchain builds
+# Scattered build directories (legacy)
 toolchains/output/
 toolchains/build/
-
-# Kernel builds
 kernel/build/
 kernel/output/
-
-# BusyBox builds
 userland/busybox/build/
 userland/busybox/output/
-
-# Package builds
 userland/packages/build/
 userland/packages/output/
 

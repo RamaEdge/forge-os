@@ -118,6 +118,44 @@ clean:
 	@rm -rf $(ARTIFACTS_DIR)
 	@echo "Clean complete"
 
+# Clean individual components
+clean-toolchain:
+	@echo "Cleaning toolchain artifacts..."
+	@rm -rf $(ARTIFACTS_DIR)/toolchain
+	@rm -rf $(BUILD_DIR)/toolchain
+	@echo "Toolchain clean complete"
+
+clean-kernel:
+	@echo "Cleaning kernel artifacts..."
+	@rm -rf $(ARTIFACTS_DIR)/kernel
+	@rm -rf $(BUILD_DIR)/kernel-*
+	@echo "Kernel clean complete"
+
+clean-busybox:
+	@echo "Cleaning BusyBox artifacts..."
+	@rm -rf $(ARTIFACTS_DIR)/busybox
+	@rm -rf $(BUILD_DIR)/busybox
+	@echo "BusyBox clean complete"
+
+clean-packages:
+	@echo "Cleaning package artifacts..."
+	@rm -rf $(ARTIFACTS_DIR)/packages
+	@rm -rf $(BUILD_DIR)/packages
+	@echo "Packages clean complete"
+
+clean-rootfs:
+	@echo "Cleaning rootfs artifacts..."
+	@rm -rf $(ARTIFACTS_DIR)/rootfs
+	@rm -rf $(ARTIFACTS_DIR)/initramfs*
+	@echo "Rootfs clean complete"
+
+clean-images:
+	@echo "Cleaning image artifacts..."
+	@rm -rf $(ARTIFACTS_DIR)/images
+	@rm -rf $(ARTIFACTS_DIR)/*.img
+	@rm -rf $(ARTIFACTS_DIR)/*.qcow2
+	@echo "Images clean complete"
+
 # Show help
 help:
 	@echo "ForgeOS Build System - Essential Targets"
@@ -141,6 +179,12 @@ help:
 	@echo ""
 	@echo "Utilities:"
 	@echo "  clean              - Clean all build artifacts"
+	@echo "  clean-toolchain    - Clean toolchain artifacts"
+	@echo "  clean-kernel       - Clean kernel artifacts"
+	@echo "  clean-busybox      - Clean BusyBox artifacts"
+	@echo "  clean-packages     - Clean package artifacts"
+	@echo "  clean-rootfs       - Clean rootfs artifacts"
+	@echo "  clean-images       - Clean image artifacts"
 	@echo "  help               - Show this help"
 	@echo ""
 	@echo "Configuration:"
@@ -160,3 +204,4 @@ help:
 
 .PHONY: image rootfs initramfs busybox kernel packages toolchain
 .PHONY: qemu-run sign release download-packages clean help
+.PHONY: clean-toolchain clean-kernel clean-busybox clean-packages clean-rootfs clean-images
