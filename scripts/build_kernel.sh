@@ -90,6 +90,10 @@ if [[ -f "$KERNEL_OUTPUT/Image" ]]; then
     exit 0
 fi
 
+# Clean build directory to prevent conflicts
+log_info "Cleaning build directory to prevent conflicts..."
+rm -rf "$BUILD_DIR/linux" "$BUILD_DIR/linux-${LINUX_VERSION}"
+
 # Set up environment BEFORE extracting kernel source
 export ARCH="$KERNEL_ARCH"
 export CROSS_COMPILE="$CROSS_COMPILE"
@@ -98,8 +102,9 @@ export CXX="${CROSS_COMPILE}g++"
 export INSTALL_PATH="$KERNEL_OUTPUT"
 export INSTALL_MOD_PATH="$KERNEL_OUTPUT"
 
-# Ensure PATH includes toolchain
+# Ensure PATH includes toolchain and export to all subprocesses
 export PATH="$TOOLCHAIN_DIR:$PATH"
+log_info "Exported toolchain PATH: $TOOLCHAIN_DIR"
 
 # Extract kernel source
 log_info "Extracting kernel source..."
@@ -117,7 +122,8 @@ if [[ -f "$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig" ]]; then
 else
     log_info "Using default config for $ARCH"
     pushd "$kernel_dir"
-    env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake defconfig
+    # Ensure all environment variables are properly exported
+    env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake defconfig
     popd
 fi
 
@@ -140,12 +146,14 @@ fi
 # Build kernel
 log_info "Building kernel (this may take a while)..."
 pushd "$kernel_dir"
-env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake -j$(nproc 2>/dev/null || echo 4)
+# Ensure all environment variables are properly exported for build
+env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake -j$(nproc 2>/dev/null || echo 4)
 
 # Install kernel
 log_info "Installing kernel..."
-env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake INSTALL_PATH="$KERNEL_OUTPUT" install
-env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" gmake INSTALL_MOD_PATH="$KERNEL_OUTPUT" modules_install
+# Ensure all environment variables are properly exported for install
+env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_PATH="$KERNEL_OUTPUT" install
+env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_MOD_PATH="$KERNEL_OUTPUT" modules_install
 popd
 
 # Copy kernel image to output
@@ -173,3 +181,8 @@ else
     log_error "Kernel image not found"
     exit 1
 fi
+
+# Clean up build directory (keep only artifacts in artifacts/)
+log_info "Cleaning up build directory..."
+rm -rf "$BUILD_DIR/linux"
+log_success "Build directory cleaned up - all outputs moved to artifacts/"
