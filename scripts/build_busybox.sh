@@ -85,6 +85,10 @@ if [[ -f "$BUSYBOX_OUTPUT/busybox" ]]; then
     exit 0
 fi
 
+# Clean build directory to prevent conflicts
+log_info "Cleaning build directory to prevent conflicts..."
+rm -rf "$BUILD_DIR/busybox" "$BUILD_DIR/busybox-${BUSYBOX_VERSION}"
+
 # Extract BusyBox source
 log_info "Extracting BusyBox source..."
 tar -xf "$busybox_tar" -C "$BUILD_DIR"
@@ -127,17 +131,19 @@ log_info "Building BusyBox (this may take a while)..."
 pushd "$busybox_dir"
 PATH="$TOOLCHAIN_DIR:$PATH" gmake -j$(nproc 2>/dev/null || echo 4)
 
-# Install BusyBox
-log_info "Installing BusyBox..."
-PATH="$TOOLCHAIN_DIR:$PATH" gmake DESTDIR="" install
+# Install BusyBox to artifacts directory
+log_info "Installing BusyBox to artifacts directory..."
+PATH="$TOOLCHAIN_DIR:$PATH" gmake DESTDIR="$BUSYBOX_OUTPUT" install
 popd
 
-# Copy BusyBox binary to output
-if [[ -f "$busybox_dir/busybox" ]]; then
-    cp "$busybox_dir/busybox" "$BUSYBOX_OUTPUT/"
-    log_success "BusyBox binary copied to $BUSYBOX_OUTPUT/busybox"
+# Verify BusyBox installation
+if [[ -f "$BUSYBOX_OUTPUT/bin/busybox" ]]; then
+    log_success "BusyBox installed to $BUSYBOX_OUTPUT/bin/busybox"
+    # Create a symlink for convenience
+    ln -sf "bin/busybox" "$BUSYBOX_OUTPUT/busybox"
+    log_success "Created convenience symlink: $BUSYBOX_OUTPUT/busybox"
 else
-    log_error "BusyBox binary not found after build"
+    log_error "BusyBox binary not found after installation"
     exit 1
 fi
 
@@ -157,3 +163,8 @@ else
     log_error "BusyBox binary not found"
     exit 1
 fi
+
+# Clean up build directory (keep only artifacts in artifacts/)
+log_info "Cleaning up build directory..."
+rm -rf "$BUILD_DIR/busybox"
+log_success "Build directory cleaned up - all outputs moved to artifacts/"
