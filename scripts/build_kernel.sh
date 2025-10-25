@@ -10,8 +10,26 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Verify versions.sh exists before sourcing
+VERSIONS_SCRIPT="$PROJECT_ROOT/scripts/versions.sh"
+if [[ ! -f "$VERSIONS_SCRIPT" ]]; then
+    echo "Error: versions.sh not found at $VERSIONS_SCRIPT" >&2
+    echo "This script is required for version management" >&2
+    exit 1
+fi
+
 # Load centralized versions
-. "$PROJECT_ROOT/scripts/versions.sh"
+# Source with error handling - if sourcing fails, the script will exit due to set -e
+. "$VERSIONS_SCRIPT" || {
+    echo "Error: Failed to source versions.sh at $VERSIONS_SCRIPT" >&2
+    exit 1
+}
+
+# Verify critical variables are set after sourcing
+if [[ -z "${LINUX_VERSION:-}" ]]; then
+    echo "Error: LINUX_VERSION is not set - versions.sh may not have been sourced correctly" >&2
+    exit 1
+fi
 
 # Parameters
 ARCH="${1:-aarch64}"
