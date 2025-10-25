@@ -131,21 +131,31 @@ log_info "Extracting kernel source..."
 tar -xf "$kernel_tar" -C "$BUILD_DIR"
 mv "$BUILD_DIR/linux-${LINUX_VERSION}" "$BUILD_DIR/linux"
 
-# Configure kernel
+# Configure kernel with mandatory hardened config
 log_info "Configuring kernel..."
 kernel_dir="$BUILD_DIR/linux"
 
-# Use our hardened config if available
-if [[ -f "$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig" ]]; then
-    log_info "Using hardened config: ${ARCH}_defconfig"
-    cp "$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig" "$kernel_dir/.config"
-else
-    log_info "Using default config for $ARCH"
-    pushd "$kernel_dir"
-    # Ensure all environment variables are properly exported
-    env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake defconfig
-    popd
+# ForgeOS SECURITY POLICY: Hardened kernel config is MANDATORY
+# This ensures all kernels shipped in ISO images have:
+# - AppArmor MAC enforcement
+# - seccomp filtering capabilities
+# - KASLR address space randomization
+# - Other hardening features configured
+HARDENED_CONFIG="$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig"
+if [[ ! -f "$HARDENED_CONFIG" ]]; then
+    log_error "HARDENED kernel config REQUIRED but NOT FOUND"
+    log_error "Expected location: $HARDENED_CONFIG"
+    log_error "This is mandatory for ForgeOS security policy"
+    log_error "The hardened config must exist to ensure all ForgeOS ISOs meet security requirements"
+    exit 1
 fi
+
+log_success "Using HARDENED kernel config: $HARDENED_CONFIG"
+cp "$HARDENED_CONFIG" "$kernel_dir/.config" || {
+    log_error "Failed to copy hardened kernel config to build directory"
+    exit 1
+}
+log_info "Kernel config loaded from: $HARDENED_CONFIG"
 
 # Apply any patches
 if [[ -d "$PROJECT_ROOT/kernel/patches" ]]; then
