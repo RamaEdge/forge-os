@@ -53,15 +53,25 @@ fi
 # Set up toolchain PATH
 TOOLCHAIN_DIR="$ARTIFACTS_DIR/toolchain/$ARCH-musl/bin"
 if [[ -d "$TOOLCHAIN_DIR" ]]; then
+    # Convert to absolute path
+    TOOLCHAIN_DIR="$(cd "$TOOLCHAIN_DIR" && pwd)"
     export PATH="$TOOLCHAIN_DIR:$PATH"
     log_info "Added toolchain to PATH: $TOOLCHAIN_DIR"
+    
+    # Verify the cross-compiler exists
+    if [[ ! -f "$TOOLCHAIN_DIR/$CROSS_COMPILE"gcc ]]; then
+        log_error "Cross-compiler not found: $TOOLCHAIN_DIR/$CROSS_COMPILE"gcc
+        log_error "Available files in $TOOLCHAIN_DIR:"
+        ls -la "$TOOLCHAIN_DIR" | head -10
+        exit 1
+    fi
 else
     log_error "Toolchain directory not found: $TOOLCHAIN_DIR"
     log_info "Please run 'make toolchain' first"
     exit 1
 fi
 
-log_info "Building BusyBox for $ARCH"
+log_info "Building Forge (BusyBox) for $ARCH"
 log_info "Build directory: $BUILD_DIR"
 log_info "Output directory: $BUSYBOX_OUTPUT"
 log_info "Cross-compile: $CROSS_COMPILE"
@@ -78,10 +88,10 @@ fi
 mkdir -p "$BUILD_DIR"
 mkdir -p "$BUSYBOX_OUTPUT"
 
-# Check if BusyBox already exists
-if [[ -f "$BUSYBOX_OUTPUT/busybox" ]]; then
-    log_success "BusyBox already exists at $BUSYBOX_OUTPUT"
-    log_info "Skipping build (use 'make clean' to rebuild)"
+# Check if forge binary already exists
+if [[ -f "$BUSYBOX_OUTPUT/forge" ]]; then
+    log_success "Forge binary already exists at $BUSYBOX_OUTPUT"
+    log_info "Skipping build (use 'make clean-busybox' to rebuild)"
     exit 0
 fi
 
@@ -107,9 +117,40 @@ if [[ -f "$PROJECT_ROOT/userland/busybox/configs/busybox_defconfig" ]]; then
     log_info "Using ForgeOS config: busybox_defconfig"
     cp "$PROJECT_ROOT/userland/busybox/configs/busybox_defconfig" "$busybox_dir/.config"
 else
-    log_info "Using default config"
+    log_info "Using default config (non-interactive)"
     pushd "$busybox_dir"
-    PATH="$TOOLCHAIN_DIR:$PATH" gmake defconfig
+    # Use defconfig with timeout to handle interactive prompts
+    timeout 30 bash -c 'printf "n\nn\nn\nn\nn\nn\nn\nn\nn\nn\n" | PATH="$TOOLCHAIN_DIR:$PATH" gmake defconfig' || true
+    
+    # Disable problematic console tools that require kernel headers
+    log_info "Disabling problematic console tools..."
+    sed -i 's/CONFIG_CHVT=y/# CONFIG_CHVT is not set/' .config
+    sed -i 's/CONFIG_CLEAR=y/# CONFIG_CLEAR is not set/' .config
+    sed -i 's/CONFIG_DEALLOCVT=y/# CONFIG_DEALLOCVT is not set/' .config
+    sed -i 's/CONFIG_DUMPKMAP=y/# CONFIG_DUMPKMAP is not set/' .config
+    sed -i 's/CONFIG_FGCONSOLE=y/# CONFIG_FGCONSOLE is not set/' .config
+    sed -i 's/CONFIG_KBD_MODE=y/# CONFIG_KBD_MODE is not set/' .config
+    sed -i 's/CONFIG_LOADFONT=y/# CONFIG_LOADFONT is not set/' .config
+    sed -i 's/CONFIG_LOADKMAP=y/# CONFIG_LOADKMAP is not set/' .config
+    sed -i 's/CONFIG_OPENVT=y/# CONFIG_OPENVT is not set/' .config
+    sed -i 's/CONFIG_RESET=y/# CONFIG_RESET is not set/' .config
+    sed -i 's/CONFIG_RESIZE=y/# CONFIG_RESIZE is not set/' .config
+    sed -i 's/CONFIG_SETCONSOLE=y/# CONFIG_SETCONSOLE is not set/' .config
+    sed -i 's/CONFIG_SETKEYCODES=y/# CONFIG_SETKEYCODES is not set/' .config
+    sed -i 's/CONFIG_SETLOGCONS=y/# CONFIG_SETLOGCONS is not set/' .config
+    sed -i 's/CONFIG_SHOWKEY=y/# CONFIG_SHOWKEY is not set/' .config
+    
+    # Set up Linux kernel headers for cross-compilation
+    log_info "Setting up Linux kernel headers for cross-compilation..."
+    export KERNEL_HEADERS="$ARTIFACTS_DIR/kernel/$ARCH/usr/include"
+    if [[ -d "$KERNEL_HEADERS" ]]; then
+        export CFLAGS="$CFLAGS -I$KERNEL_HEADERS"
+        log_info "Added kernel headers to CFLAGS: $KERNEL_HEADERS"
+    else
+        log_warning "Kernel headers not found at $KERNEL_HEADERS"
+        log_info "BusyBox will use minimal console support"
+    fi
+    
     popd
 fi
 
@@ -129,19 +170,60 @@ fi
 # Build BusyBox
 log_info "Building BusyBox (this may take a while)..."
 pushd "$busybox_dir"
-PATH="$TOOLCHAIN_DIR:$PATH" gmake -j$(nproc 2>/dev/null || echo 4)
+# Set up environment variables for cross-compilation
+export PATH="$TOOLCHAIN_DIR:$PATH"
+export CROSS_COMPILE="$CROSS_COMPILE"
+export CC="$CROSS_COMPILE"gcc
+export CXX="$CROSS_COMPILE"g++
+export AR="$CROSS_COMPILE"ar
+export LD="$CROSS_COMPILE"ld
+export STRIP="$CROSS_COMPILE"strip
+export RANLIB="$CROSS_COMPILE"ranlib
+export NM="$CROSS_COMPILE"nm
+export OBJCOPY="$CROSS_COMPILE"objcopy
+export OBJDUMP="$CROSS_COMPILE"objdump
+
+# Verify the cross-compiler is available
+if ! command -v "$CROSS_COMPILE"gcc >/dev/null 2>&1; then
+    log_error "Cross-compiler not found: $CROSS_COMPILE"gcc
+    log_error "PATH: $PATH"
+    exit 1
+fi
+
+# Use timeout to handle any remaining interactive prompts
+timeout 300 gmake -j$(nproc 2>/dev/null || echo 4) || {
+    log_error "BusyBox build failed or timed out"
+    exit 1
+}
+popd
 
 # Install BusyBox to artifacts directory
 log_info "Installing BusyBox to artifacts directory..."
-PATH="$TOOLCHAIN_DIR:$PATH" gmake DESTDIR="$BUSYBOX_OUTPUT" install
+pushd "$busybox_dir"
+# Set up environment variables for cross-compilation
+export PATH="$TOOLCHAIN_DIR:$PATH"
+export CROSS_COMPILE="$CROSS_COMPILE"
+export CC="$CROSS_COMPILE"gcc
+export CXX="$CROSS_COMPILE"g++
+export AR="$CROSS_COMPILE"ar
+export LD="$CROSS_COMPILE"ld
+export STRIP="$CROSS_COMPILE"strip
+export RANLIB="$CROSS_COMPILE"ranlib
+export NM="$CROSS_COMPILE"nm
+export OBJCOPY="$CROSS_COMPILE"objcopy
+export OBJDUMP="$CROSS_COMPILE"objdump
+gmake DESTDIR="$BUSYBOX_OUTPUT" install
 popd
 
-# Verify BusyBox installation
+# Verify and rename BusyBox installation to 'forge'
 if [[ -f "$BUSYBOX_OUTPUT/bin/busybox" ]]; then
-    log_success "BusyBox installed to $BUSYBOX_OUTPUT/bin/busybox"
-    # Create a symlink for convenience
-    ln -sf "bin/busybox" "$BUSYBOX_OUTPUT/busybox"
-    log_success "Created convenience symlink: $BUSYBOX_OUTPUT/busybox"
+    # Rename BusyBox binary to 'forge' for ForgeOS identity
+    mv "$BUSYBOX_OUTPUT/bin/busybox" "$BUSYBOX_OUTPUT/bin/forge"
+    log_success "BusyBox renamed to 'forge' for ForgeOS identity"
+    
+    # Create convenience symlink
+    ln -sf "bin/forge" "$BUSYBOX_OUTPUT/forge"
+    log_success "Created convenience symlink: $BUSYBOX_OUTPUT/forge"
 else
     log_error "BusyBox binary not found after installation"
     exit 1
@@ -153,18 +235,14 @@ if [[ -f "$busybox_dir/.config" ]]; then
     log_success "BusyBox config copied to $BUSYBOX_OUTPUT/config"
 fi
 
-log_success "BusyBox build complete: $BUSYBOX_OUTPUT"
-
-# Verify BusyBox binary
-if [[ -f "$BUSYBOX_OUTPUT/busybox" ]]; then
-    log_success "BusyBox binary created successfully"
-    file "$BUSYBOX_OUTPUT/busybox"
-else
-    log_error "BusyBox binary not found"
-    exit 1
-fi
+log_success "Forge build complete: $BUSYBOX_OUTPUT"
 
 # Clean up build directory (keep only artifacts in artifacts/)
 log_info "Cleaning up build directory..."
-rm -rf "$BUILD_DIR/busybox"
-log_success "Build directory cleaned up - all outputs moved to artifacts/"
+if [[ -d "$BUILD_DIR/busybox" ]]; then
+    # Force remove the directory and all contents
+    rm -rf "$BUILD_DIR/busybox" 2>/dev/null || true
+    log_success "Build directory cleaned up - all outputs moved to artifacts/"
+else
+    log_info "Build directory already clean"
+fi

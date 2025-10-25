@@ -46,6 +46,9 @@ log_error() {
 DOWNLOADS_DIR="$PROJECT_ROOT/packages/downloads"
 KERNEL_OUTPUT="$ARTIFACTS_DIR/kernel/$ARCH"
 
+# Convert to absolute paths to avoid issues with subdirectory builds
+KERNEL_OUTPUT="$(cd "$PROJECT_ROOT" && pwd)/$ARTIFACTS_DIR/kernel/$ARCH"
+
 # Cross-compilation settings
 if [[ "$ARCH" == "aarch64" ]]; then
     CROSS_COMPILE="aarch64-linux-${TOOLCHAIN}-"
@@ -58,6 +61,8 @@ fi
 # Set up toolchain PATH
 TOOLCHAIN_DIR="$ARTIFACTS_DIR/toolchain/$ARCH-$TOOLCHAIN/bin"
 if [[ -d "$TOOLCHAIN_DIR" ]]; then
+    # Convert to absolute path
+    TOOLCHAIN_DIR="$(cd "$TOOLCHAIN_DIR" && pwd)"
     export PATH="$TOOLCHAIN_DIR:$PATH"
     log_info "Added toolchain to PATH: $TOOLCHAIN_DIR"
 else
@@ -83,10 +88,10 @@ fi
 mkdir -p "$BUILD_DIR"
 mkdir -p "$KERNEL_OUTPUT"
 
-# Check if kernel already exists
-if [[ -f "$KERNEL_OUTPUT/Image" ]]; then
-    log_success "Kernel already exists at $KERNEL_OUTPUT"
-    log_info "Skipping build (use 'make clean' to rebuild)"
+# Check if kernel already exists and is complete
+if [[ -f "$KERNEL_OUTPUT/Image" ]] && [[ -f "$KERNEL_OUTPUT/config" ]] && [[ -d "$KERNEL_OUTPUT/lib" ]]; then
+    log_success "Complete kernel build already exists at $KERNEL_OUTPUT"
+    log_info "Skipping build (use 'make clean-kernel' to rebuild)"
     exit 0
 fi
 
@@ -123,7 +128,7 @@ else
     log_info "Using default config for $ARCH"
     pushd "$kernel_dir"
     # Ensure all environment variables are properly exported
-    env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake defconfig
+    env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake defconfig
     popd
 fi
 
@@ -147,13 +152,17 @@ fi
 log_info "Building kernel (this may take a while)..."
 pushd "$kernel_dir"
 # Ensure all environment variables are properly exported for build
-env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake -j$(nproc 2>/dev/null || echo 4)
+env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake -j$(nproc 2>/dev/null || echo 4)
 
 # Install kernel
 log_info "Installing kernel..."
 # Ensure all environment variables are properly exported for install
-env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_PATH="$KERNEL_OUTPUT" install
-env PATH="$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_MOD_PATH="$KERNEL_OUTPUT" modules_install
+env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_PATH="$KERNEL_OUTPUT" install
+env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_MOD_PATH="$KERNEL_OUTPUT" modules_install
+
+# Install kernel headers for cross-compilation
+log_info "Installing kernel headers..."
+env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake INSTALL_HDR_PATH="$KERNEL_OUTPUT/usr" headers_install
 popd
 
 # Copy kernel image to output

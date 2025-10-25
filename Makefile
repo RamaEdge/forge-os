@@ -134,7 +134,7 @@ clean-kernel:
 clean-busybox:
 	@echo "Cleaning BusyBox artifacts..."
 	@rm -rf $(ARTIFACTS_DIR)/busybox
-	@rm -rf $(BUILD_DIR)/busybox
+	@rm -rf $(BUILD_DIR)/busybox 2>/dev/null || true
 	@echo "BusyBox clean complete"
 
 clean-packages:
