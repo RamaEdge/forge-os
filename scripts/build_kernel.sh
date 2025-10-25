@@ -329,11 +329,54 @@ elif [[ -d "$PROJECT_ROOT/kernel/patches" ]] && [[ $(find "$PROJECT_ROOT/kernel/
     log_info "No kernel patches found (patches directory is empty)"
 fi
 
-# Build kernel
+# Build kernel with intelligent parallel job handling
 log_info "Building kernel (this may take a while)..."
+
+# Determine parallel job count
+# Priority: PARALLEL_JOBS env var > nproc > 1 (single-threaded fallback)
+PARALLEL_JOBS="${PARALLEL_JOBS:-}"
+if [[ -z "$PARALLEL_JOBS" ]]; then
+    PARALLEL_JOBS=$(nproc 2>/dev/null || echo 1)
+fi
+
+# Validate PARALLEL_JOBS is a positive integer
+if ! [[ "$PARALLEL_JOBS" =~ ^[0-9]+$ ]] || [[ $PARALLEL_JOBS -lt 1 ]]; then
+    log_warning "Invalid PARALLEL_JOBS value: $PARALLEL_JOBS (must be positive integer)"
+    PARALLEL_JOBS=1
+fi
+
+log_info "Building kernel with $PARALLEL_JOBS parallel job(s)"
+log_info "To override: PARALLEL_JOBS=8 ./scripts/build_kernel.sh"
+
 pushd "$kernel_dir"
 # Ensure all environment variables are properly exported for build
-env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake -j$(nproc 2>/dev/null || echo 4)
+# Try parallel build first, fall back to single-threaded if it fails
+if ! env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake -j"$PARALLEL_JOBS"; then
+    # Parallel build failed - try single-threaded as fallback
+    log_warning "Parallel build with $PARALLEL_JOBS job(s) failed"
+    log_info "Retrying kernel build with single-threaded mode (safer for low-resource systems)..."
+    
+    # Clean up any partial build artifacts
+    log_info "Cleaning up partial build artifacts..."
+    env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake clean >/dev/null 2>&1 || true
+    
+    # Retry with single job
+    if ! env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="$CC" CXX="$CXX" gmake; then
+        log_error "Kernel build failed even with single-threaded mode"
+        log_error "This indicates a serious build issue (not just parallelism)"
+        log_error "Suggestions:"
+        log_error "  - Check available disk space: df -h $BUILD_DIR"
+        log_error "  - Check available memory: free -h"
+        log_error "  - Verify toolchain: ${CROSS_COMPILE}gcc --version"
+        log_error "  - Review patches for compatibility with Linux ${LINUX_VERSION}"
+        popd
+        exit 1
+    fi
+    
+    log_success "Kernel build succeeded with single-threaded mode (fallback)"
+else
+    log_success "Kernel build succeeded with $PARALLEL_JOBS parallel job(s)"
+fi
 
 # Install kernel
 log_info "Installing kernel..."
