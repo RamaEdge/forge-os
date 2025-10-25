@@ -412,16 +412,49 @@ fi
 
 log_success "Kernel build complete: $KERNEL_OUTPUT"
 
-# Verify kernel image
-if [[ -f "$KERNEL_OUTPUT/Image" ]]; then
-    log_success "Kernel image created successfully"
-    file "$KERNEL_OUTPUT/Image"
-else
-    log_error "Kernel image not found"
+# ISO Packaging: Stage kernel artifacts for final use
+log_info "ISO Packaging: Staging kernel artifacts..."
+
+# Rename kernel image to standard vmlinuz name
+log_info "Staging kernel image as vmlinuz..."
+if ! cp "$kernel_dir/arch/$KERNEL_ARCH/boot/Image" "$KERNEL_OUTPUT/vmlinuz"; then
+    log_error "Failed to stage kernel image as vmlinuz"
     exit 1
 fi
+log_success "Kernel image staged as: $KERNEL_OUTPUT/vmlinuz"
 
-# Clean up build directory (keep only artifacts in artifacts/)
-log_info "Cleaning up build directory..."
-rm -rf "$BUILD_DIR/linux"
-log_success "Build directory cleaned up - all outputs moved to artifacts/"
+# Verify vmlinuz was created
+if ! [[ -f "$KERNEL_OUTPUT/vmlinuz" ]]; then
+    log_error "Kernel image vmlinuz not found after staging"
+    exit 1
+fi
+log_success "✓ vmlinuz verified"
+
+# Copy System.map for debugging kernel panics and address resolution
+if [[ -f "$kernel_dir/System.map" ]]; then
+    log_info "Staging System.map for debugging..."
+    cp "$kernel_dir/System.map" "$KERNEL_OUTPUT/System.map" || {
+        log_error "Failed to copy System.map"
+        exit 1
+    }
+    log_success "✓ System.map staged"
+else
+    log_warning "System.map not found - kernel debugging symbols will be unavailable"
+fi
+
+# Verify final ISO packaging structure
+log_success "ISO packaging complete. Final artifact structure:"
+log_info "Artifacts location: $KERNEL_OUTPUT"
+log_info "Kernel image:       vmlinuz"
+log_info "Configuration:      config"
+if [[ -f "$KERNEL_OUTPUT/System.map" ]]; then
+    log_info "Debug symbols:      System.map"
+fi
+log_info "Modules:            lib/modules/"
+
+# Summary
+log_success "Kernel ready for ISO build:"
+log_success "  - Kernel image (vmlinuz) available for boot"
+log_success "  - Kernel modules available for initramfs"
+log_success "  - Configuration available for auditing"
+[[ -f "$KERNEL_OUTPUT/System.map" ]] && log_success "  - Debug symbols available for tracing"
