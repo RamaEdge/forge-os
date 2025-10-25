@@ -5,12 +5,18 @@
 
 set -e
 
-# Script configuration
-if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-else
-    PROJECT_ROOT="$(pwd)"
+# Script configuration - Detect project root using git
+# This ensures we find the correct root regardless of script location or invocation directory
+if ! PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    # Fallback to script-based detection if not in a git repository
+    if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    else
+        PROJECT_ROOT="$(pwd)"
+    fi
+    echo "Warning: Not in a git repository. Using fallback project root detection." >&2
+    echo "Project root: $PROJECT_ROOT" >&2
 fi
 
 PACKAGES_JSON="$PROJECT_ROOT/packages.json"
