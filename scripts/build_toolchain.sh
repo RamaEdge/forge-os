@@ -63,10 +63,13 @@ log_info "Output directory: $TOOLCHAIN_OUTPUT"
 mkdir -p "$BUILD_DIR"
 mkdir -p "$TOOLCHAIN_OUTPUT"
 
-# Check if toolchain already exists
-if [[ -f "$TOOLCHAIN_OUTPUT/bin/$CROSS_COMPILE"gcc ]]; then
-    log_success "Toolchain already exists at $TOOLCHAIN_OUTPUT"
-    log_info "Skipping build (use 'make clean' to rebuild)"
+# Check if toolchain already exists and is complete
+if [[ -f "$TOOLCHAIN_OUTPUT/bin/$CROSS_COMPILE"gcc ]] && \
+   [[ -f "$TOOLCHAIN_OUTPUT/bin/$CROSS_COMPILE"g++ ]] && \
+   [[ -f "$TOOLCHAIN_OUTPUT/bin/$CROSS_COMPILE"ar ]] && \
+   [[ -f "$TOOLCHAIN_OUTPUT/bin/$CROSS_COMPILE"ld ]]; then
+    log_success "Complete toolchain already exists at $TOOLCHAIN_OUTPUT"
+    log_info "Skipping toolchain build (use 'make clean-toolchain' to rebuild)"
     exit 0
 fi
 
@@ -168,11 +171,20 @@ build_musl_toolchain() {
     log_info "Building musl..."
     local musl_dir="$build_root/musl-${MUSL_VERSION}"
     
+    # Check if musl is already built
+    if [[ -f "$toolchain_target_abs/lib/libc.so" ]] && [[ -f "$toolchain_target_abs/bin/musl-gcc" ]]; then
+        log_success "musl already built - skipping"
+        return 0
+    fi
+    
     pushd "$musl_dir"
-    # Set up cross-compilation environment
+    # Set up cross-compilation environment for musl build
+    # Use host compiler to build musl, not the cross-compiler
     export PATH="$TOOLCHAIN_OUTPUT/bin:$PATH"
-    export CC="$CROSS_COMPILE"gcc
-    export CROSS_COMPILE="$CROSS_COMPILE"
+    export CC="gcc"  # Use host gcc, not cross-compiler
+    export CROSS_COMPILE=""  # Clear cross-compile for musl build
+    export CFLAGS="-O2"
+    export LDFLAGS=""
     ./configure \
         --prefix="$toolchain_target_abs" \
         --disable-shared \
@@ -258,6 +270,12 @@ build_glibc_toolchain() {
     local glibc_build_dir="$glibc_dir/build"
     mkdir -p "$glibc_build_dir"
     
+    # Check if glibc is already built
+    if [[ -f "$toolchain_target_abs/lib/libc.so.6" ]] && [[ -f "$toolchain_target_abs/lib/libm.so.6" ]]; then
+        log_success "glibc already built - skipping"
+        return 0
+    fi
+    
     pushd "$glibc_build_dir"
     "$glibc_dir/configure" \
         --target="$TARGET" \
@@ -317,6 +335,9 @@ case "$TOOLCHAIN" in
         exit 1
         ;;
 esac
+
+# Reset CROSS_COMPILE for verification
+CROSS_COMPILE="$TARGET-"
 
 # Verify toolchain
 log_info "Verifying toolchain..."
