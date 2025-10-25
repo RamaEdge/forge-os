@@ -212,20 +212,62 @@ cp "$HARDENED_CONFIG" "$kernel_dir/.config" || {
 }
 log_info "Kernel config loaded from: $HARDENED_CONFIG"
 
-# Apply any patches
+# Apply kernel patches - MANDATORY with fail-fast behavior
+# All patches must apply cleanly. If any patch fails:
+# - Build stops immediately (prevents corrupted kernel)
+# - Clear error identifies which patch failed
+# - Prevents interdependent patches from being in inconsistent state
 if [[ -d "$PROJECT_ROOT/kernel/patches" ]]; then
-    log_info "Applying kernel patches..."
-    for patch in "$PROJECT_ROOT/kernel/patches"/*.patch; do
-        if [[ -f "$patch" ]]; then
-            log_info "Applying patch: $(basename "$patch")"
-            pushd "$kernel_dir"
-            if ! patch -p1 < "$patch"; then
-                log_warning "Patch $(basename "$patch") failed to apply - continuing without it"
-                log_info "This may be due to kernel version incompatibility"
+    # Count patches to apply
+    patch_count=0
+    while IFS= read -r patch; do
+        ((patch_count++)) || true
+    done < <(find "$PROJECT_ROOT/kernel/patches" -maxdepth 1 -name "*.patch" -type f | sort)
+    
+    if [[ $patch_count -gt 0 ]]; then
+        log_info "Applying $patch_count kernel patch(es)..."
+        patch_num=0
+        for patch in "$PROJECT_ROOT/kernel/patches"/*.patch; do
+            if [[ -f "$patch" ]]; then
+                ((patch_num++)) || true
+                patch_name="$(basename "$patch")"
+                log_info "[$patch_num/$patch_count] Applying patch: $patch_name"
+                pushd "$kernel_dir" >/dev/null || {
+                    log_error "Failed to enter kernel directory: $kernel_dir"
+                    exit 1
+                }
+                
+                # Apply patch with explicit error checking
+                if ! patch -p1 < "$patch" 2>&1 | tee -a "$KERNEL_OUTPUT/patch-${patch_name}.log"; then
+                    log_error "PATCH FAILED: $patch_name"
+                    log_error "Patch file: $patch"
+                    log_error "Kernel directory: $kernel_dir"
+                    log_error "Patch output saved to: $KERNEL_OUTPUT/patch-${patch_name}.log"
+                    log_error "This indicates either:"
+                    log_error "  1. Kernel version mismatch (verify LINUX_VERSION)"
+                    log_error "  2. Patch already applied"
+                    log_error "  3. Patch designed for different kernel configuration"
+                    log_error "  4. Interdependent patches not in correct order"
+                    log_error ""
+                    log_error "To fix:"
+                    log_error "  - Check patch is for Linux ${LINUX_VERSION}"
+                    log_error "  - Verify patch order in $PROJECT_ROOT/kernel/patches/"
+                    log_error "  - Review patch-${patch_name}.log for details"
+                    popd >/dev/null
+                    exit 1
+                fi
+                
+                log_success "Applied patch: $patch_name"
+                popd >/dev/null || {
+                    log_error "Failed to exit kernel directory"
+                    exit 1
+                }
             fi
-            popd
-        fi
-    done
+        done
+        log_success "All $patch_count patch(es) applied successfully"
+    fi
+elif [[ -d "$PROJECT_ROOT/kernel/patches" ]] && [[ $(find "$PROJECT_ROOT/kernel/patches" -maxdepth 1 -name "*.patch" -type f | wc -l) -eq 0 ]]; then
+    log_info "No kernel patches found (patches directory is empty)"
 fi
 
 # Build kernel
