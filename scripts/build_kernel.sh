@@ -125,17 +125,26 @@ log_error() {
 
 # Build configuration
 DOWNLOADS_DIR="$PROJECT_ROOT/packages/downloads"
-KERNEL_OUTPUT="$(cd "$PROJECT_ROOT" && pwd)/$ARTIFACTS_DIR/kernel/$ARCH"
+
+# Store ForgeOS architecture before it gets overwritten for kernel build
+FORGEOS_ARCH="$ARCH"
+KERNEL_OUTPUT="$(cd "$PROJECT_ROOT" && pwd)/$ARTIFACTS_DIR/kernel/$FORGEOS_ARCH"
 
 # Cross-compilation settings
 # ARCH = ForgeOS architecture (aarch64) - used for config file names, MUST NOT be overwritten
-# LINUX_ARCH = Linux kernel internal architecture (arm64) - used for gmake ARCH= parameter
+# LINUX_ARCH = Linux kernel internal architecture name - used for gmake ARCH= parameter
+#
+# Architecture naming convention:
+# - ForgeOS uses 'aarch64' (official ARM term, matches GNU toolchain)
+# - Linux kernel uses 'arm64' (Linux community term, matches kernel source)
+# - This conversion is necessary for kernel build system compatibility
+
 if [[ "$ARCH" == "aarch64" ]]; then
     CROSS_COMPILE="aarch64-linux-${TOOLCHAIN}-"
-    LINUX_ARCH="arm64"
+    LINUX_ARCH="arm64"  # Required: Linux kernel expects 'arm64' for ARM 64-bit
 else
     CROSS_COMPILE="${ARCH}-linux-${TOOLCHAIN}-"
-    LINUX_ARCH="$ARCH"
+    LINUX_ARCH="$ARCH"  # For other architectures, use ForgeOS architecture name
 fi
 
 # Set up toolchain PATH - convert to absolute path early
@@ -178,6 +187,7 @@ log_info "Cleaning build directory to prevent conflicts..."
 rm -rf "$BUILD_DIR/linux" "$BUILD_DIR/linux-${LINUX_VERSION}"
 
 # Set up environment BEFORE extracting kernel source
+# Note: We use LINUX_ARCH for kernel build system, but keep ForgeOS ARCH for config file paths
 export ARCH="$LINUX_ARCH"
 export CROSS_COMPILE="$CROSS_COMPILE"
 export CC="${CROSS_COMPILE}gcc"
@@ -269,14 +279,14 @@ kernel_dir="$BUILD_DIR/linux"
 # - KERNEL_ARCH variable (arm64) = Linux kernel internal architecture code, used for gmake ARCH=
 # Our config file is named: kernel/configs/aarch64_defconfig (uses ARCH, not KERNEL_ARCH)
 #
-HARDENED_CONFIG="$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig"
+HARDENED_CONFIG="$PROJECT_ROOT/kernel/configs/${FORGEOS_ARCH}_defconfig"
 if [[ ! -f "$HARDENED_CONFIG" ]]; then
     log_error "HARDENED kernel config REQUIRED but NOT FOUND"
     log_error "Expected location: $HARDENED_CONFIG"
     log_error ""
     log_error "Config file naming convention:"
     log_error "  - Uses ForgeOS ARCH identifier (aarch64), not Linux KERNEL_ARCH (arm64)"
-    log_error "  - Expected file: kernel/configs/${ARCH}_defconfig"
+    log_error "  - Expected file: kernel/configs/${FORGEOS_ARCH}_defconfig"
     log_error "  - Actual path: $HARDENED_CONFIG"
     log_error ""
     log_error "This is mandatory for ForgeOS security policy."
