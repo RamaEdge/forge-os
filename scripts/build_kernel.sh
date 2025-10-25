@@ -61,9 +61,15 @@
 
 set -euo pipefail
 
-# Script configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+# Script configuration - Detect project root using git
+# This ensures we find the correct root regardless of script location or invocation directory
+if ! PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
+    # Fallback to script-based detection if not in a git repository
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    echo "Warning: Not in a git repository. Using fallback project root detection." >&2
+    echo "Project root: $PROJECT_ROOT" >&2
+fi
 
 # Verify versions.sh exists before sourcing
 VERSIONS_SCRIPT="$PROJECT_ROOT/scripts/versions.sh"
