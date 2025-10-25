@@ -181,10 +181,69 @@ export INSTALL_MOD_PATH="$KERNEL_OUTPUT"
 export PATH="$TOOLCHAIN_DIR:$PATH"
 log_info "Exported toolchain PATH: $TOOLCHAIN_DIR"
 
-# Extract kernel source
-log_info "Extracting kernel source..."
-tar -xf "$kernel_tar" -C "$BUILD_DIR"
-mv "$BUILD_DIR/linux-${LINUX_VERSION}" "$BUILD_DIR/linux"
+# Extract kernel source with validation
+log_info "Extracting kernel source from $kernel_tar..."
+log_info "Expected to extract to: $BUILD_DIR/linux-${LINUX_VERSION}"
+
+# Validate tar file before extraction
+if [[ ! -f "$kernel_tar" ]]; then
+    log_error "Kernel source archive not found: $kernel_tar"
+    log_error "This should not happen (already checked at line 75)"
+    exit 1
+fi
+
+# Extract tar with explicit error checking
+if ! tar -xf "$kernel_tar" -C "$BUILD_DIR"; then
+    log_error "EXTRACTION FAILED: Failed to extract kernel source"
+    log_error "Archive: $kernel_tar"
+    log_error "Extract destination: $BUILD_DIR"
+    log_error "This indicates:"
+    log_error "  - Archive is corrupted or incomplete"
+    log_error "  - Insufficient disk space"
+    log_error "  - Permission denied on extract destination"
+    log_error "  - Invalid tar file format"
+    log_error ""
+    log_error "To debug:"
+    log_error "  1. Check archive integrity: tar -tzf $kernel_tar | head -20"
+    log_error "  2. Check disk space: df -h $BUILD_DIR"
+    log_error "  3. Redownload: make download-packages"
+    exit 1
+fi
+
+# Validate expected directory structure exists
+if [[ ! -d "$BUILD_DIR/linux-${LINUX_VERSION}" ]]; then
+    log_error "EXTRACTION INCOMPLETE: Expected directory not found after extraction"
+    log_error "Expected: $BUILD_DIR/linux-${LINUX_VERSION}"
+    log_error "Archive: $kernel_tar"
+    log_error ""
+    log_error "Contents of $BUILD_DIR after extraction:"
+    ls -lah "$BUILD_DIR" 2>/dev/null | sed 's/^/  /'
+    log_error ""
+    log_error "This indicates:"
+    log_error "  - Archive structure differs from expected"
+    log_error "  - Archive is for wrong Linux version"
+    log_error "  - Archive is incomplete"
+    log_error ""
+    log_error "To fix:"
+    log_error "  - Verify LINUX_VERSION=${LINUX_VERSION} is correct"
+    log_error "  - Check packages.json for correct kernel URL"
+    log_error "  - Redownload: make download-packages"
+    exit 1
+fi
+
+# Rename extracted directory for consistency
+if ! mv "$BUILD_DIR/linux-${LINUX_VERSION}" "$BUILD_DIR/linux"; then
+    log_error "EXTRACTION FAILED: Could not rename extracted directory"
+    log_error "From: $BUILD_DIR/linux-${LINUX_VERSION}"
+    log_error "To:   $BUILD_DIR/linux"
+    log_error "This indicates:"
+    log_error "  - Permission denied"
+    log_error "  - Destination already exists"
+    log_error "  - Filesystem error"
+    exit 1
+fi
+
+log_success "Kernel source extracted successfully to $BUILD_DIR/linux"
 
 # Configure kernel with mandatory hardened config
 log_info "Configuring kernel..."
