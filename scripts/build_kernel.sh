@@ -261,12 +261,24 @@ kernel_dir="$BUILD_DIR/linux"
 # - seccomp filtering capabilities
 # - KASLR address space randomization
 # - Other hardening features configured
+#
+# NOTE on naming convention:
+# - ARCH variable (aarch64) = ForgeOS architecture identifier, used for config file names
+# - KERNEL_ARCH variable (arm64) = Linux kernel internal architecture code, used for gmake ARCH=
+# Our config file is named: kernel/configs/aarch64_defconfig (uses ARCH, not KERNEL_ARCH)
+#
 HARDENED_CONFIG="$PROJECT_ROOT/kernel/configs/${ARCH}_defconfig"
 if [[ ! -f "$HARDENED_CONFIG" ]]; then
     log_error "HARDENED kernel config REQUIRED but NOT FOUND"
     log_error "Expected location: $HARDENED_CONFIG"
-    log_error "This is mandatory for ForgeOS security policy"
-    log_error "The hardened config must exist to ensure all ForgeOS ISOs meet security requirements"
+    log_error ""
+    log_error "Config file naming convention:"
+    log_error "  - Uses ForgeOS ARCH identifier (aarch64), not Linux KERNEL_ARCH (arm64)"
+    log_error "  - Expected file: kernel/configs/${ARCH}_defconfig"
+    log_error "  - Actual path: $HARDENED_CONFIG"
+    log_error ""
+    log_error "This is mandatory for ForgeOS security policy."
+    log_error "The hardened config must exist to ensure all ForgeOS ISOs meet security requirements."
     exit 1
 fi
 
