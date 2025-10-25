@@ -128,12 +128,14 @@ DOWNLOADS_DIR="$PROJECT_ROOT/packages/downloads"
 KERNEL_OUTPUT="$(cd "$PROJECT_ROOT" && pwd)/$ARTIFACTS_DIR/kernel/$ARCH"
 
 # Cross-compilation settings
+# ARCH = ForgeOS architecture (aarch64) - used for config file names, MUST NOT be overwritten
+# LINUX_ARCH = Linux kernel internal architecture (arm64) - used for gmake ARCH= parameter
 if [[ "$ARCH" == "aarch64" ]]; then
     CROSS_COMPILE="aarch64-linux-${TOOLCHAIN}-"
-    KERNEL_ARCH="arm64"
+    LINUX_ARCH="arm64"
 else
     CROSS_COMPILE="${ARCH}-linux-${TOOLCHAIN}-"
-    KERNEL_ARCH="$ARCH"
+    LINUX_ARCH="$ARCH"
 fi
 
 # Set up toolchain PATH - convert to absolute path early
@@ -176,7 +178,7 @@ log_info "Cleaning build directory to prevent conflicts..."
 rm -rf "$BUILD_DIR/linux" "$BUILD_DIR/linux-${LINUX_VERSION}"
 
 # Set up environment BEFORE extracting kernel source
-export ARCH="$KERNEL_ARCH"
+export ARCH="$LINUX_ARCH"
 export CROSS_COMPILE="$CROSS_COMPILE"
 export CC="${CROSS_COMPILE}gcc"
 export CXX="${CROSS_COMPILE}g++"
@@ -408,8 +410,8 @@ env PATH="$TOOLCHAIN_DIR:$PATH" ARCH="$ARCH" CROSS_COMPILE="$CROSS_COMPILE" CC="
 popd
 
 # Copy kernel image to output
-if [[ -f "$kernel_dir/arch/$KERNEL_ARCH/boot/Image" ]]; then
-    cp "$kernel_dir/arch/$KERNEL_ARCH/boot/Image" "$KERNEL_OUTPUT/"
+if [[ -f "$kernel_dir/arch/$LINUX_ARCH/boot/Image" ]]; then
+    cp "$kernel_dir/arch/$LINUX_ARCH/boot/Image" "$KERNEL_OUTPUT/"
     log_success "Kernel image copied to $KERNEL_OUTPUT/Image"
 else
     log_error "Kernel image not found after build"
@@ -429,7 +431,7 @@ log_info "ISO Packaging: Staging kernel artifacts..."
 
 # Rename kernel image to standard vmlinuz name
 log_info "Staging kernel image as vmlinuz..."
-if ! cp "$kernel_dir/arch/$KERNEL_ARCH/boot/Image" "$KERNEL_OUTPUT/vmlinuz"; then
+if ! cp "$kernel_dir/arch/$LINUX_ARCH/boot/Image" "$KERNEL_OUTPUT/vmlinuz"; then
     log_error "Failed to stage kernel image as vmlinuz"
     exit 1
 fi
