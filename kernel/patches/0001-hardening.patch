@@ -13,7 +13,7 @@ diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
 index 1234567..abcdefg 100644
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
-@@ -100,6 +100,11 @@ config ARM64
+@@ -97,6 +97,11 @@ config ARM64
  	select ARCH_SUPPORTS_ATOMIC_RMW
  	select ARCH_SUPPORTS_INT128 if CC_HAS_INT128
  	select ARCH_SUPPORTS_NUMA_BALANCING
@@ -22,6 +22,6 @@ index 1234567..abcdefg 100644
 +	select ARCH_HAS_STRICT_MODULE_RWX
 +	select ARCH_MMAP_RND_BITS if MMU
 +	select ARCH_MMAP_RND_COMPAT_BITS if MMU
- 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION if COMPAT
- 	select ARCH_WANT_DEFAULT_TOPDOWN_MMAP_LAYOUT
- 	select ARCH_WANT_FRAME_POINTERS
+ 	select ARCH_SUPPORTS_PAGE_TABLE_CHECK
+ 	select ARCH_SUPPORTS_PER_VMA_LOCK
+ 	select ARCH_WANT_BATCHED_UNMAP_TLB_FLUSH
