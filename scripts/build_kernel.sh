@@ -1,6 +1,8 @@
 #!/bin/bash
 # Build Linux kernel for ForgeOS using pre-downloaded source
-# Usage: build_kernel.sh <arch> <build_dir> <artifacts_dir>
+# Usage: build_kernel.sh [arch] [toolchain] [artifacts_dir]
+# Example: build_kernel.sh aarch64 musl artifacts
+# Output: artifacts/kernel/aarch64/{Image,config,lib/modules/,...}
 
 set -euo pipefail
 
@@ -16,8 +18,8 @@ ARCH="${1:-aarch64}"
 TOOLCHAIN="${2:-musl}"
 ARTIFACTS_DIR="${3:-artifacts}"
 
-# Build directory based on toolchain
-BUILD_DIR="build/kernel-${TOOLCHAIN}"
+# Convert BUILD_DIR to absolute path to ensure consistency regardless of script invocation location
+BUILD_DIR="$(cd "$PROJECT_ROOT" && pwd)/build/kernel-${TOOLCHAIN}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -44,9 +46,6 @@ log_error() {
 
 # Build configuration
 DOWNLOADS_DIR="$PROJECT_ROOT/packages/downloads"
-KERNEL_OUTPUT="$ARTIFACTS_DIR/kernel/$ARCH"
-
-# Convert to absolute paths to avoid issues with subdirectory builds
 KERNEL_OUTPUT="$(cd "$PROJECT_ROOT" && pwd)/$ARTIFACTS_DIR/kernel/$ARCH"
 
 # Cross-compilation settings
@@ -58,11 +57,9 @@ else
     KERNEL_ARCH="$ARCH"
 fi
 
-# Set up toolchain PATH
-TOOLCHAIN_DIR="$ARTIFACTS_DIR/toolchain/$ARCH-$TOOLCHAIN/bin"
+# Set up toolchain PATH - convert to absolute path early
+TOOLCHAIN_DIR="$(cd "$PROJECT_ROOT" && pwd)/$ARTIFACTS_DIR/toolchain/$ARCH-$TOOLCHAIN/bin"
 if [[ -d "$TOOLCHAIN_DIR" ]]; then
-    # Convert to absolute path
-    TOOLCHAIN_DIR="$(cd "$TOOLCHAIN_DIR" && pwd)"
     export PATH="$TOOLCHAIN_DIR:$PATH"
     log_info "Added toolchain to PATH: $TOOLCHAIN_DIR"
 else
