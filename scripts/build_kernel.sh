@@ -1,8 +1,63 @@
 #!/bin/bash
-# Build Linux kernel for ForgeOS using pre-downloaded source
-# Usage: build_kernel.sh [arch] [toolchain] [artifacts_dir]
-# Example: build_kernel.sh aarch64 musl artifacts
-# Output: artifacts/kernel/aarch64/{Image,config,lib/modules/,...}
+################################################################################
+# ForgeOS Kernel Build Script
+# 
+# Compiles the Linux kernel with ForgeOS hardened configuration and stages
+# the resulting artifacts (kernel image, modules, config) for ISO packaging.
+#
+# Usage:
+#   build_kernel.sh [arch] [toolchain] [artifacts_dir]
+#
+# Parameters:
+#   arch           Target architecture (default: aarch64)
+#                  Supported: aarch64 (ARM 64-bit)
+#
+#   toolchain      Cross-compilation toolchain type (default: musl)
+#                  Supported: musl (default, Alpine-compatible)
+#                             glibc (GNU C Library)
+#
+#   artifacts_dir  Directory for staging kernel artifacts (default: artifacts)
+#                  CRITICAL: ISO build system expects this path to contain:
+#                  - vmlinuz (kernel image)
+#                  - config (kernel configuration)
+#                  - lib/modules/ (kernel modules)
+#
+# Examples:
+#   # Build for ARM64 with musl toolchain (default)
+#   ./scripts/build_kernel.sh
+#
+#   # Build for ARM64 with GNU C library
+#   ./scripts/build_kernel.sh aarch64 glibc
+#
+#   # Build with custom artifacts directory
+#   ./scripts/build_kernel.sh aarch64 musl /custom/build/path
+#
+# Output Artifacts:
+#   artifacts/kernel/aarch64/
+#   ├── vmlinuz              # Kernel image (arm64 binary)
+#   ├── config               # Kernel build configuration (for auditing)
+#   ├── System.map           # Symbol table (for debugging)
+#   └── lib/modules/         # Kernel modules directory
+#       └── <version>/       # Module version directory
+#           ├── kernel/      # Kernel modules
+#           ├── modules.dep  # Module dependency information
+#           └── modules.*.bin # Module binaries
+#
+# Security Features:
+#   - Mandatory hardened kernel configuration (AppArmor, seccomp, KASLR)
+#   - Signed kernel image (if signing is enabled)
+#   - Deterministic build (reproducible artifacts)
+#
+# Dependencies:
+#   - Cross-compilation toolchain (run 'make toolchain' first)
+#   - Kernel source (run 'make download-packages' first)
+#   - versions.sh (loaded automatically for version info)
+#
+# Exit Codes:
+#   0 = Success: Kernel built and staged in artifacts directory
+#   1 = Failure: See error messages for details
+#
+################################################################################
 
 set -euo pipefail
 
